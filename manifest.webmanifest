@@ -1,0 +1,20 @@
+{
+  "name": "Clínica Demo",
+  "short_name": "Clínica",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fbfcf9",
+  "theme_color": "#176b5b",
+  "icons": [
+    {
+      "src": "assets/icon-192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "assets/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

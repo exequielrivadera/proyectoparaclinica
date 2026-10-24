@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#176b5b">
+  <meta name="description" content="Clínica Demo: especialidades, profesionales y turnos online.">
+  <title>Clínica Demo | Atención y turnos online</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="Clínica Demo, inicio">
+      <span class="brand-mark">+</span><span><strong>Clínica</strong><small>DEMO · SALUD INTEGRAL</small></span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav id="mainNav">
+      <a href="#especialidades" data-view-link="especialidades">Especialidades</a><a href="#profesionales" data-view-link="profesionales">Profesionales</a>
+      <a href="#nosotros" data-view-link="clinica">La clínica</a><a href="#contacto">Contacto</a>
+      <button class="btn btn-small" data-open-booking>Solicitar turno</button>
+      <button class="btn btn-outline btn-small" id="openPortal">Portal pacientes</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="pulse-dot"></span> Cuidamos de vos y de tu familia</span>
+        <h1>Tu salud,<br><em>en buenas manos.</em></h1>
+        <p>Atención cercana, profesionales comprometidos y una forma más simple de organizar tus turnos y consultar tus estudios.</p>
+        <div class="hero-actions"><button class="btn" data-open-booking>Encontrar un turno</button><button class="text-link" data-view-link="especialidades">Conocé nuestras especialidades</button></div>
+        <div class="hero-note"><span class="check">✓</span> Turnos online · Recordatorios por email · Portal privado</div>
+      </div>
+      <div class="hero-art" aria-label="Ilustración decorativa de salud">
+        <div class="sun"></div><div class="art-card card-one"><span class="mini-icon">✚</span><strong>Atención integral</strong><small>Un equipo cerca tuyo</small></div>
+        <div class="art-card card-two"><span class="calendar-icon">▦</span><strong>Turnos simples</strong><small>Elegí día y horario</small></div>
+        <div class="art-circle"><div class="cross">+</div><div class="art-caption">Cuidarte<br>es nuestra<br>prioridad</div></div>
+        <div class="leaf leaf-a"></div><div class="leaf leaf-b"></div>
+      </div>
+    </section>
+
+    <section class="quick-info">
+      <div><span class="info-icon">◷</span><span><strong>Horarios organizados</strong><small>Consultá la disponibilidad</small></span></div>
+      <div><span class="info-icon">♡</span><span><strong>Atención humana</strong><small>Profesionales comprometidos</small></span></div>
+      <div><span class="info-icon">▤</span><span><strong>Estudios digitales</strong><small>Acceso privado para pacientes</small></span></div>
+    </section>
+
+    <section class="section" id="especialidades">
+      <div class="section-heading"><div><span class="eyebrow">NUESTROS SERVICIOS</span><h2>Encontrá la atención que necesitás</h2></div><p>Elegí una especialidad y consultá los profesionales y horarios disponibles.</p></div>
+      <div class="specialty-grid">
+        <button class="specialty" data-specialty="Clínica Médica"><span class="specialty-icon mint">✚</span><strong>Clínica Médica</strong><small>Atención general y seguimiento</small></button>
+        <button class="specialty" data-specialty="Cardiología"><span class="specialty-icon peach">♡</span><strong>Cardiología</strong><small>Cuidado de la salud cardiovascular</small></button>
+        <button class="specialty" data-specialty="Pediatría"><span class="specialty-icon blue">☼</span><strong>Pediatría</strong><small>Salud y desarrollo infantil</small></button>
+        <button class="specialty" data-specialty="Dermatología"><span class="specialty-icon lavender">◉</span><strong>Dermatología</strong><small>Cuidado integral de la piel</small></button>
+        <button class="specialty" data-specialty="Ginecología"><span class="specialty-icon peach">✿</span><strong>Ginecología</strong><small>Salud y prevención</small></button>
+        <button class="specialty" data-specialty="Traumatología"><span class="specialty-icon mint">⌁</span><strong>Traumatología</strong><small>Huesos, articulaciones y movimiento</small></button>
+      </div>
+    </section>
+
+    <section class="doctors-section" id="profesionales">
+      <div class="section-heading"><div><span class="eyebrow">NUESTRO EQUIPO</span><h2>Profesionales que te acompañan</h2></div><button class="btn btn-outline" data-open-booking>Ver disponibilidad</button></div>
+      <div class="doctor-grid">
+        <article class="doctor"><div class="doctor-avatar avatar-a">AL</div><div class="doctor-info"><span class="doctor-specialty">CARDIOLOGÍA</span><h3>Dra. Ana López</h3><p>Atención cardiovascular y prevención.</p><button class="text-link" data-doctor="Dra. Ana López">Consultar turnos</button></div></article>
+        <article class="doctor"><div class="doctor-avatar avatar-b">MP</div><div class="doctor-info"><span class="doctor-specialty">CLÍNICA MÉDICA</span><h3>Dr. Martín Pérez</h3><p>Medicina general y seguimiento clínico.</p><button class="text-link" data-doctor="Dr. Martín Pérez">Consultar turnos</button></div></article>
+        <article class="doctor"><div class="doctor-avatar avatar-c">SG</div><div class="doctor-info"><span class="doctor-specialty">PEDIATRÍA</span><h3>Dra. Sofía Gómez</h3><p>Atención pediátrica y acompañamiento familiar.</p><button class="text-link" data-doctor="Dra. Sofía Gómez">Consultar turnos</button></div></article>
+      </div>
+      <p class="demo-note">Los nombres y perfiles de esta demostración son ficticios y deberán reemplazarse por los datos reales de cada institución.</p>
+    </section>
+
+    <section class="booking-banner">
+      <div><span class="eyebrow">TU TIEMPO IMPORTA</span><h2>Encontrá un horario<br>que se adapte a vos.</h2><p>Consultá días y horarios disponibles antes de reservar.</p></div>
+      <button class="btn btn-light" data-open-booking>Buscar turnos disponibles</button>
+      <div class="banner-shape">+</div>
+    </section>
+
+    <section class="section about" id="nosotros">
+      <div class="about-visual"><div class="about-square"><span class="big-plus">+</span><span class="about-stamp">CERCANÍA<br>Y CONFIANZA</span></div></div>
+      <div class="about-copy"><span class="eyebrow">SOBRE NOSOTROS</span><h2>Una atención más simple, sin perder lo humano.</h2><p>En Clínica Demo creemos que el cuidado empieza escuchando. Trabajamos para que acceder a una consulta, recordar un turno y consultar documentación médica sea una experiencia clara y accesible.</p><ul><li>Información clara sobre especialidades y profesionales.</li><li>Reserva de turnos desde cualquier dispositivo.</li><li>Portal privado para documentación médica autorizada.</li></ul><button class="btn" data-open-booking>Solicitar un turno</button></div>
+    </section>
+
+    <section class="contact-section" id="contacto">
+      <div><span class="eyebrow">ESTAMOS PARA AYUDARTE</span><h2>¿Tenés alguna consulta?</h2><p>Contactá a secretaría para consultas generales o para recibir ayuda con tu turno.</p></div>
+      <div class="contact-cards"><a class="contact-card" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">◉</span><span><strong>WhatsApp de secretaría</strong><small>Configurar número institucional</small></span><b>↗</b></a><a class="contact-card" href="mailto:secretaria@example.com"><span class="contact-icon">✉</span><span><strong>Correo electrónico</strong><small>secretaria@example.com (demo)</small></span><b>↗</b></a><div class="contact-card"><span class="contact-icon">⌖</span><span><strong>Ubicación</strong><small>Dirección de ejemplo, La Rioja</small></span><b>⌖</b></div></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-main"><a class="brand footer-brand" href="#inicio"><span class="brand-mark">+</span><span><strong>Clínica</strong><small>DEMO · SALUD INTEGRAL</small></span></a><p>Información de demostración. No reemplaza una consulta médica ni constituye un servicio de emergencias.</p><div class="footer-links"><a href="#especialidades" data-view-link="especialidades">Especialidades</a><a href="#profesionales" data-view-link="profesionales">Profesionales</a><a href="#contacto">Contacto</a></div></div>
+    <div class="footer-bottom"><span>© <span id="year"></span> Clínica Demo. Todos los derechos reservados.</span><div class="credit"><span>Diseñada por</span><strong>Pulso Digital</strong><img src="assets/pulsodigital-logo.png" alt="Logo de Pulso Digital"></div></div>
+  </footer>
+
+
+  <section id="internalView" class="internal-view" aria-hidden="true" inert>
+    <div class="internal-view-top"><button type="button" class="back-link" id="viewBack">← Volver al inicio</button><span class="internal-kicker">CLÍNICA DEMO</span></div>
+    <div class="internal-view-content" id="internalViewContent"></div>
+  </section>
+  <div class="whatsapp-widget" id="whatsappWidget">
+    <div class="whatsapp-teaser" id="whatsappTeaser">¿Te asesoramos?</div>
+    <button class="whatsapp-fab" id="whatsappFab" aria-label="Abrir asesoramiento por WhatsApp" aria-expanded="false">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16.05 3.2A12.7 12.7 0 0 0 5.1 22.3L3.4 28.7l6.6-1.7A12.7 12.7 0 1 0 16.05 3.2Zm0 22.9a10.2 10.2 0 0 1-5.2-1.42l-.38-.23-3.92 1.03 1.05-3.82-.25-.4a10.15 10.15 0 1 1 8.7 4.84Zm5.57-7.6c-.3-.15-1.8-.89-2.08-.99-.28-.1-.48-.15-.68.15-.2.3-.78.99-.96 1.19-.18.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.8-1.67-2.1-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.38-.03-.53-.07-.15-.68-1.64-.93-2.25-.24-.59-.49-.51-.68-.52h-.58c-.2 0-.53.08-.8.38-.28.3-1.06 1.03-1.06 2.52s1.09 2.92 1.24 3.12c.15.2 2.14 3.27 5.18 4.58.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.8-.74 2.05-1.45.25-.72.25-1.34.18-1.47-.08-.13-.28-.2-.58-.35Z" fill="currentColor"/></svg>
+    </button>
+    <div class="whatsapp-chat" id="whatsappChat" hidden>
+      <div class="chat-head"><span class="chat-logo">+</span><span><strong>¿Te asesoramos?</strong><small>Clínica Demo · Secretaría</small></span><button id="closeWhatsapp" aria-label="Cerrar chat">×</button></div>
+      <div class="chat-body"><div class="chat-bubble">¡Hola! Podés solicitar un turno directamente desde la web. Si tenés dudas, escribí <strong>chat</strong> y te llevaremos a WhatsApp para que puedas consultarnos.</div>
+        <label for="whatsappMessage">Tu mensaje</label><input id="whatsappMessage" value="chat" maxlength="300" placeholder="Escribí tu consulta">
+        <button class="btn chat-send" id="sendWhatsapp">Continuar por WhatsApp</button><p class="chat-disclaimer" id="whatsappStatus">El número oficial de secretaría debe configurarse antes de habilitar el envío.</p>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="bookingDialog" class="modal">
+    <form id="bookingForm" method="dialog">
+      <div class="modal-heading"><div><span class="eyebrow">RESERVA ONLINE</span><h2>Solicitá tu turno</h2></div><button type="button" class="close-modal" data-close="bookingDialog" aria-label="Cerrar">×</button></div>
+      <div class="steps"><span class="step active">1. Especialidad y horario</span><span class="step">2. Tus datos</span></div>
+      <div class="form-grid">
+        <label class="full">Especialidad<select id="specialtySelect" required><option value="">Seleccionar especialidad</option><option>Clínica Médica</option><option>Cardiología</option><option>Pediatría</option><option>Dermatología</option><option>Ginecología</option><option>Traumatología</option></select></label>
+        <label class="full">Profesional<select id="doctorSelect"><option value="">Cualquier profesional</option><option>Dra. Ana López</option><option>Dr. Martín Pérez</option><option>Dra. Sofía Gómez</option></select></label>
+        <label>Fecha disponible<input type="date" id="appointmentDate" required></label>
+        <label>Horario disponible<select id="timeSelect" required><option value="">Elegí primero la fecha</option></select></label>
+        <p class="availability-note full" id="availabilityNote">Seleccioná especialidad y fecha para consultar los horarios de demostración.</p>
+        <div class="full" id="demandNote" hidden></div>
+        <div class="full form-separator"><span>Datos del paciente</span></div>
+        <label>Nombres<input id="firstNames" autocomplete="given-name" required maxlength="100" placeholder="Tus nombres"></label>
+        <label>Apellidos<input id="lastNames" autocomplete="family-name" required maxlength="100" placeholder="Tus apellidos"></label>
+        <label>DNI<input id="dni" inputmode="numeric" pattern="[0-9]{7,9}" required placeholder="Solo números"></label>
+        <label>Sexo<select id="sex" required><option value="">Seleccionar</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicarlo</option></select></label>
+        <label>Celular<input id="phone" type="tel" autocomplete="tel" required placeholder="Código de área y número"></label>
+        <label>Email<input id="email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></label>
+        <label class="full check-label"><input type="checkbox" id="consent" required> Confirmo que los datos son correctos y acepto el tratamiento de datos necesario para gestionar el turno.</label>
+      </div>
+      <div class="privacy-note"><strong>Tu privacidad importa.</strong> El formulario de esta versión es demostrativo y no envía ni almacena datos reales. En producción, los datos deberán procesarse en un servidor seguro.</div>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="bookingDialog">Cancelar</button><button type="submit" class="btn">Solicitar turno</button></div>
+      <div id="bookingResult" class="result-message" role="status" hidden></div>
+    </form>
+  </dialog>
+
+  <dialog id="portalDialog" class="modal portal-modal">
+    <form method="dialog" id="portalForm">
+      <div class="modal-heading"><div><span class="eyebrow">ÁREA PRIVADA</span><h2>Portal de pacientes</h2></div><button type="button" class="close-modal" data-close="portalDialog" aria-label="Cerrar">×</button></div>
+      <p>Ingresá con tu DNI como usuario y la contraseña que creaste al activar tu cuenta.</p>
+      <label>DNI / Usuario<input inputmode="numeric" autocomplete="username" required placeholder="Tu DNI"></label>
+      <label>Contraseña<input type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
+      <button type="submit" class="btn full-width">Ingresar al portal</button>
+      <p class="small-muted">En la versión de demostración el acceso está desactivado. La versión real requerirá autenticación segura y habilitación previa por administración. El DNI no se usará como contraseña permanente.</p>
+      <div id="portalResult" class="result-message" role="status" hidden></div>
+    </form>
+  </dialog>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
