@@ -1,3 +1,13 @@
+const API_BASE = (window.CLINICA_API_BASE !== undefined ? window.CLINICA_API_BASE : ((location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000' : '')).replace(/\/$/, '');
+async function apiRequest(path, options={}) {
+  const response = await fetch(API_BASE + path, {
+    ...options,
+    headers: {'Content-Type':'application/json', ...(options.headers||{})}
+  });
+  const data = await response.json().catch(()=>({error:'Respuesta inválida del servidor.'}));
+  if (!response.ok) throw new Error(data.error || 'No se pudo completar la solicitud.');
+  return data;
+}
 const $ = (s, root=document) => root.querySelector(s);
 const $$ = (s, root=document) => [...root.querySelectorAll(s)];
 const bookingDialog = $("#bookingDialog");
@@ -11,9 +21,7 @@ const demandNote = $("#demandNote");
 const result = $("#bookingResult");
 $("#year").textContent = new Date().getFullYear();
 
-// Demo-only availability. A production deployment must retrieve and reserve slots atomically on the server.
-const demoSlots = ["08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00"];
-const demoUnavailable = {"2026-10-26":["09:00","10:30"],"2026-10-27":["08:30","09:30","11:00"],"2026-10-28":["10:00"]};
+// La disponibilidad se consulta en el backend para que reservas y horarios compartan la misma agenda.
 function localDate(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,10); }
 dateInput.min = localDate(new Date());
 dateInput.value = localDate(new Date(Date.now()+86400000));
@@ -35,44 +43,102 @@ dateInput.addEventListener("change",refreshSlots);
 specialtySelect.addEventListener("change",refreshSlots);
 doctorSelect.addEventListener("change",refreshSlots);
 
-function refreshSlots(){
+function getChosenDoctor(){
+  const mapping={
+    "Cardiología":"Dra. Ana López",
+    "Clínica Médica":"Dr. Martín Pérez",
+    "Pediatría":"Dra. Sofía Gómez"
+  };
+  const selected=doctorSelect.value;
+  const valid={
+    "Cardiología":["Dra. Ana López"],
+    "Clínica Médica":["Dr. Martín Pérez"],
+    "Pediatría":["Dra. Sofía Gómez"],
+    "Dermatología":["Profesional a incorporar"],
+    "Ginecología":["Profesional a incorporar"],
+    "Traumatología":["Profesional a incorporar"]
+  };
+  return (valid[specialtySelect.value]||[]).includes(selected)
+    ? selected : (mapping[specialtySelect.value] || "Profesional a incorporar");
+}
+async function refreshSlots(){
   const day=dateInput.value;
   timeSelect.innerHTML="";
   demandNote.hidden=true;
   if(!specialtySelect.value || !day){
     timeSelect.add(new Option("Elegí especialidad y fecha",""));
-    note.textContent="Seleccioná especialidad y fecha para consultar los horarios de demostración.";
+    note.textContent="Seleccioná especialidad y fecha para consultar los horarios.";
     return;
   }
-  const date=new Date(day+"T12:00:00");
-  if(date.getDay()===0){
-    timeSelect.add(new Option("Sin atención los domingos",""));
-    note.textContent="No hay atención cargada para el domingo. Elegí otro día.";
-    return;
-  }
-  const taken=demoUnavailable[day]||[];
-  const available=demoSlots.filter(t=>!taken.includes(t));
-  if(!available.length){
-    timeSelect.add(new Option("Sin horarios disponibles",""));
-    note.textContent="No hay horarios disponibles para esa fecha en esta demostración.";
-    return;
-  }
-  timeSelect.add(new Option("Seleccionar horario",""));
-  available.forEach(t=>timeSelect.add(new Option(t,t)));
-  note.textContent=`${available.length} horarios de ejemplo para ${specialtySelect.value}. La disponibilidad real deberá conectarse a la agenda de la clínica.`;
-  if(available.length<=5){
-    demandNote.hidden=false;
-    demandNote.className="demand-alert";
-    demandNote.textContent="Aviso de ejemplo: quedan pocos horarios de demostración. En producción, este aviso se basará en reservas reales y no en datos inventados.";
+  const specialty=specialtySelect.value;
+  const chosenDoctor=getChosenDoctor();
+  timeSelect.add(new Option("Consultando horarios…",""));
+  note.textContent="Consultando disponibilidad de la agenda…";
+  try{
+    const params=new URLSearchParams({specialty,date:day,doctor:chosenDoctor});
+    const data=await apiRequest('/api/availability?'+params.toString());
+    timeSelect.innerHTML="";
+    if(!data.slots || !data.slots.length){
+      timeSelect.add(new Option("Sin horarios disponibles",""));
+      note.textContent=data.message || "No hay horarios disponibles para esa fecha.";
+      return;
+    }
+    timeSelect.add(new Option("Seleccionar horario",""));
+    data.slots.forEach(t=>timeSelect.add(new Option(t,t)));
+    note.textContent=`${data.slots.length} horarios ${data.demo?'de demostración':'disponibles'} para ${specialty}.`;
+    if(data.slots.length<=3){
+      demandNote.hidden=false; demandNote.className="demand-alert";
+      demandNote.textContent=data.demo
+        ?"Quedan pocos horarios en esta agenda de demostración."
+        :"Quedan pocos horarios disponibles para esta fecha.";
+    }
+  }catch(error){
+    timeSelect.innerHTML="";
+    timeSelect.add(new Option("Agenda no disponible",""));
+    note.textContent=`No pudimos consultar la agenda: ${error.message || "error de conexión"}. Revisá la terminal del backend.`;
   }
 }
-$("#bookingForm").addEventListener("submit",e=>{
+$("#bookingForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!$("#consent").checked) return;
   const chosen=timeSelect.value;
   if(!chosen){note.textContent="Elegí un horario disponible antes de continuar.";return}
+  const specialty=specialtySelect.value;
+  const doctor=getChosenDoctor();
+  const submitButton=$("#bookingForm button[type='submit']");
+  submitButton.disabled=true; submitButton.textContent="Guardando turno…";
   result.hidden=false;
-  result.innerHTML="<strong>Formulario de demostración completado.</strong><br>No se creó un turno real ni se enviaron correos. Para activar reservas y recordatorios hace falta conectar un backend, una base de datos y un servicio de email.";
+  result.textContent="Registrando la solicitud…";
+  try{
+    const data=await apiRequest('/api/appointments',{method:'POST',body:JSON.stringify({
+      first_names:$("#firstNames").value.trim(),
+      last_names:$("#lastNames").value.trim(),
+      dni:$("#dni").value.trim(),
+      sex:$("#sex").value,
+      email:$("#email").value.trim(),
+      phone:$("#phone").value.trim(),
+      specialty,doctor,date:dateInput.value,time:chosen,consent:$("#consent").checked
+    })});
+    result.textContent="";
+    const strong=document.createElement('strong');
+    strong.textContent=data.demo?'Turno de demostración registrado.':'¡Tu turno está registrado!';
+    result.appendChild(strong);
+    const detail=document.createElement('p');
+    detail.textContent=`${data.appointment.doctor} · ${data.appointment.specialty} · ${data.appointment.date} a las ${data.appointment.time}.`;
+    result.appendChild(detail);
+    const email=document.createElement('p');
+    email.textContent=data.email_sent?'Enviamos la confirmación a tu correo.':'El turno quedó guardado, pero el correo no se envió. La clínica debe configurar el servicio de correo.';
+    result.appendChild(email);
+    if(data.demo){
+      const demo=document.createElement('p'); demo.textContent='Esta es una agenda de prueba. No uses datos reales de pacientes.'; result.appendChild(demo);
+    }
+    await refreshSlots();
+  }catch(error){
+    result.textContent=error.message;
+    if(error.message.includes('ocup')) await refreshSlots();
+  }finally{
+    submitButton.disabled=false; submitButton.textContent="Solicitar turno";
+  }
   result.scrollIntoView({block:"nearest",behavior:"smooth"});
 });
 $("#portalForm").addEventListener("submit",e=>{
@@ -127,27 +193,129 @@ function bindInternalView(){
 }
 
 // WhatsApp flotante persistente. Configurar el número real en formato internacional sin + ni espacios.
-const WHATSAPP_NUMBER = '5493804507584'; // WhatsApp de contacto de Pulso Digital / secretaría
+const WHATSAPP_NUMBER = '5493804507584'; // WhatsApp indicado por el responsable del proyecto.
 const whatsappFab=document.getElementById('whatsappFab');
 const whatsappChat=document.getElementById('whatsappChat');
 const whatsappTeaser=document.getElementById('whatsappTeaser');
 function openWhatsappChat(){whatsappChat.hidden=false;whatsappFab.setAttribute('aria-expanded','true');whatsappTeaser.classList.add('is-faded');document.getElementById('whatsappMessage').focus();}
+const DEFAULT_WHATSAPP_MESSAGE='Hola, necesito asesoramiento, por favor.';
+function sendWhatsappMessage(message){
+  if(!/^5493804507584$/.test(WHATSAPP_NUMBER)){
+    document.getElementById('whatsappStatus').textContent='No se pudo validar el número de WhatsApp.';
+    return;
+  }
+  window.open('https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+}
 function closeWhatsappChat(){whatsappChat.hidden=true;whatsappFab.setAttribute('aria-expanded','false');}
 whatsappFab.addEventListener('click',()=>whatsappChat.hidden?openWhatsappChat():closeWhatsappChat());
 document.getElementById('closeWhatsapp').addEventListener('click',closeWhatsappChat);
-document.getElementById('sendWhatsapp').addEventListener('click',()=>{
-  const status=document.getElementById('whatsappStatus');
-  if(!/^\d{10,15}$/.test(WHATSAPP_NUMBER)){status.textContent='No se pudo validar el número de WhatsApp.';return;}
-  const msg=(document.getElementById('whatsappMessage').value.trim()||'chat');
-  window.open('https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(msg),'_blank','noopener,noreferrer');
-});
-// Al desplazarse, el botón se compacta; al pasar el cursor recupera su tamaño.
-function updateWhatsappScrollState(){document.getElementById('whatsappWidget').classList.toggle('is-scrolled',window.scrollY>80);}
-window.addEventListener('scroll',updateWhatsappScrollState,{passive:true});
-updateWhatsappScrollState();
-// Cualquier enlace de WhatsApp abre el chat del número configurado.
-const whatsappLink=document.getElementById('whatsappLink');
-if(whatsappLink){whatsappLink.href='https://wa.me/'+WHATSAPP_NUMBER;whatsappLink.addEventListener('click',e=>{e.preventDefault();window.open('https://wa.me/'+WHATSAPP_NUMBER,'_blank','noopener,noreferrer');});}
 
+const chatMessages=document.getElementById('chatMessages');
+const chatOptions=document.getElementById('chatQuickOptions');
+const chatQuickTitle=document.getElementById('chatQuickTitle');
+const chatInput=document.getElementById('chatInput');
+const chatInputForm=document.getElementById('chatInputForm');
+const chatStatus=document.getElementById('whatsappStatus');
+const chatResetHome=document.getElementById('chatResetHome');
+let botState='menu';
+function addChatMessage(text,who='bot'){
+  const bubble=document.createElement('div');
+  bubble.className='chat-bubble '+(who==='user'?'user-message':'bot-message');
+  bubble.textContent=text;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function setBotPrompt(prompt,placeholder='Escribí tu respuesta...'){
+  chatInput.placeholder=placeholder;
+  chatInput.setAttribute('aria-label',placeholder);
+  chatQuickTitle.textContent=prompt||'';
+  chatOptions.hidden=!prompt;
+}
+function showCleanAnswer(answer){
+  chatMessages.replaceChildren();
+  addChatMessage(answer,'bot');
+  chatOptions.hidden=true;
+  chatQuickTitle.textContent='';
+  chatInputForm.hidden=true;
+  chatResetHome.hidden=false;
+  chatStatus.textContent='Consulta finalizada. Volvé al inicio para realizar otra consulta.';
+  botState='answered';
+}
+function returnToBotHome(){
+  chatMessages.replaceChildren();
+  addChatMessage('¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué podemos ayudarte?','bot');
+  chatResetHome.hidden=true;
+  chatInputForm.hidden=false;
+  chatInput.value='';
+  botState='menu';
+  setBotPrompt('Elegí una opción:');
+  chatOptions.hidden=false;
+  chatStatus.textContent='Asistente demostrativo: la agenda y los datos de ejemplo no son reales.';
+}
+chatResetHome.addEventListener('click',returnToBotHome);
+function chooseBotAction(action){
+  if(action==='appointment'){
+    botState='dni'; addChatMessage('Para buscar tu turno, ingresá tu DNI sin puntos ni espacios. En esta demo usá 30123456.','bot');
+    setBotPrompt('Consulta de turno','Ingresá tu DNI'); chatOptions.hidden=true; chatInput.focus(); return;
+  }
+  if(action==='specialties'){
+    showCleanAnswer('Estas son las especialidades de ejemplo: Clínica Médica, Cardiología y Pediatría. También están previstas Dermatología, Ginecología y Traumatología. Los profesionales y servicios deben confirmarse con la clínica antes de publicar la web.'); return;
+  }
+  if(action==='hours'){
+    showCleanAnswer('Los horarios y la dirección todavía deben configurarse con los datos reales de la clínica. En esta demo no quiero darte información que podría ser incorrecta.'); return;
+  }
+  if(action==='preparation'){
+    addChatMessage('La preparación depende del estudio o consulta. Decime cuál necesitás consultar; la información deberá ser validada por el equipo médico. No suspendas medicamentos ni cambies indicaciones sin consultar a un profesional.','bot');
+    botState='preparation'; setBotPrompt('¿Para qué consulta o estudio?','Ej.: análisis de sangre'); chatOptions.hidden=true; chatInput.focus();
+  }
+}
+chatOptions.querySelectorAll('[data-bot-action]').forEach(btn=>btn.addEventListener('click',()=>chooseBotAction(btn.dataset.botAction)));
+document.getElementById('humanWhatsapp').addEventListener('click',()=>{
+  sendWhatsappMessage('Hola, necesito asesoramiento y quisiera hablar con una persona de la clínica, por favor.');
+});
+chatInputForm.addEventListener('submit',event=>{
+  event.preventDefault();
+  const value=chatInput.value.trim(); if(!value)return;
+  addChatMessage(value,'user'); chatInput.value='';
+  if(botState==='dni'){
+    const dni=value.replace(/\D/g,'');
+    if(!/^\d{7,9}$/.test(dni)){
+      addChatMessage('El DNI no parece válido. Ingresá entre 7 y 9 números, sin puntos.','bot'); return;
+    }
+    chatInput.disabled=true;
+    apiRequest('/api/bot/appointment-lookup',{method:'POST',body:JSON.stringify({dni})})
+      .then(data=>{
+        if(data.found && data.appointments.length){
+          const details=data.appointments.map(a=>`${a.doctor} · ${a.specialty} · ${a.date} a las ${a.time}`).join('\\n');
+          showCleanAnswer(`Encontré tu turno${data.appointments.length>1?'s':''}:\\n${details}${data.demo?'\\n\\nTurno ficticio de demostración.':''}`);
+        }else{
+          showCleanAnswer(data.message || 'No encontré turnos para ese DNI en la agenda de demostración.');
+        }
+      })
+      .catch(error=>showCleanAnswer(error.message))
+      .finally(()=>{chatInput.disabled=false;});
+    return;
+  }
+  if(botState==='preparation'){
+    showCleanAnswer('Gracias. En la versión final esta respuesta se basará en indicaciones aprobadas por la clínica. Por ahora, confirmá la preparación directamente con el equipo médico.'); return;
+  }
+  const normalized=value.toLowerCase();
+  if(/turno|cita|reserva/.test(normalized)){chooseBotAction('appointment');return;}
+  if(/especialidad|médico|medico|profesional/.test(normalized)){chooseBotAction('specialties');return;}
+  if(/horario|dirección|direccion|ubicación|ubicacion/.test(normalized)){chooseBotAction('hours');return;}
+  addChatMessage('Puedo ayudarte con consultas de turnos, especialidades, horarios o preparación general. Elegí una opción para continuar.','bot');
+  setBotPrompt('Elegí una opción:'); chatOptions.hidden=false;
+});
+// Al desplazarse, el widget se compacta; el texto desaparece en degradado. Hover/foco recupera tamaño.
+function updateWhatsappCompact(){document.getElementById('whatsappWidget').classList.toggle('is-compact',window.scrollY>35);}
+window.addEventListener('scroll',updateWhatsappCompact,{passive:true});
+updateWhatsappCompact();
+const whatsappLink=document.getElementById('whatsappLink');
+const whatsappHref='https://wa.me/'+WHATSAPP_NUMBER;
+whatsappLink.href=whatsappHref;
+whatsappLink.target='_blank';
+whatsappLink.rel='noopener noreferrer';
+whatsappLink.querySelector('small').textContent='+54 9 380 450-7584';
+whatsappLink.addEventListener('click',e=>{e.preventDefault();window.open(whatsappHref,'_blank','noopener,noreferrer');});
 // Si se entra mediante un enlace con hash de vista interna, abrir la vista correspondiente.
 const initialHash=location.hash.replace('#','');if(viewTemplates[initialHash])openInternalView(initialHash);

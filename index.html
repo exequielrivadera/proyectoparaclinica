@@ -20,7 +20,7 @@
       <a href="#especialidades" data-view-link="especialidades">Especialidades</a><a href="#profesionales" data-view-link="profesionales">Profesionales</a>
       <a href="#nosotros" data-view-link="clinica">La clínica</a><a href="#contacto">Contacto</a>
       <button class="btn btn-small" data-open-booking>Solicitar turno</button>
-      <button class="btn btn-outline btn-small" id="openPortal">Portal pacientes</button>
+      <button class="btn btn-outline btn-small" id="openPortal">Portal pacientes</button><a class="btn btn-outline btn-small" href="paneles.html">Acceso institucional</a>
     </nav>
   </header>
 
@@ -82,7 +82,7 @@
 
     <section class="contact-section" id="contacto">
       <div><span class="eyebrow">ESTAMOS PARA AYUDARTE</span><h2>¿Tenés alguna consulta?</h2><p>Contactá a secretaría para consultas generales o para recibir ayuda con tu turno.</p></div>
-      <div class="contact-cards"><a class="contact-card" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">◉</span><span><strong>WhatsApp de secretaría</strong><small>Configurar número institucional</small></span><b>↗</b></a><a class="contact-card" href="mailto:secretaria@example.com"><span class="contact-icon">✉</span><span><strong>Correo electrónico</strong><small>secretaria@example.com (demo)</small></span><b>↗</b></a><div class="contact-card"><span class="contact-icon">⌖</span><span><strong>Ubicación</strong><small>Dirección de ejemplo, La Rioja</small></span><b>⌖</b></div></div>
+      <div class="contact-cards"><a class="contact-card" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">◉</span><span><strong>WhatsApp de secretaría</strong><small>+54 9 380 450-7584</small></span><b>↗</b></a><a class="contact-card" href="mailto:secretaria@example.com"><span class="contact-icon">✉</span><span><strong>Correo electrónico</strong><small>secretaria@example.com (demo)</small></span><b>↗</b></a><div class="contact-card"><span class="contact-icon">⌖</span><span><strong>Ubicación</strong><small>Dirección de ejemplo, La Rioja</small></span><b>⌖</b></div></div>
     </section>
   </main>
 
@@ -103,9 +103,24 @@
     </button>
     <div class="whatsapp-chat" id="whatsappChat" hidden>
       <div class="chat-head"><span class="chat-logo">+</span><span><strong>¿Te asesoramos?</strong><small>Clínica Demo · Secretaría</small></span><button id="closeWhatsapp" aria-label="Cerrar chat">×</button></div>
-      <div class="chat-body"><div class="chat-bubble">¡Hola! Podés solicitar un turno directamente desde la web. Si tenés dudas, escribí <strong>chat</strong> y te llevaremos a WhatsApp para que puedas consultarnos.</div>
-        <label for="whatsappMessage">Tu mensaje</label><input id="whatsappMessage" value="chat" maxlength="300" placeholder="Escribí tu consulta">
-        <button class="btn chat-send" id="sendWhatsapp">Continuar por WhatsApp</button><p class="chat-disclaimer" id="whatsappStatus">El número oficial de secretaría debe configurarse antes de habilitar el envío.</p>
+      <div class="chat-body">
+        <div class="chat-messages" id="chatMessages" aria-live="polite">
+          <div class="chat-bubble bot-message">¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué podemos ayudarte?</div>
+        </div>
+        <button type="button" class="chat-reset-home" id="chatResetHome" hidden>← Volver al inicio</button>
+        <div class="chat-quick-title" id="chatQuickTitle">Elegí una opción:</div>
+        <div class="chat-quick-options" id="chatQuickOptions">
+          <button type="button" class="chat-quick" data-bot-action="appointment">📅 Consultar mi turno</button>
+          <button type="button" class="chat-quick" data-bot-action="specialties">🩺 Especialidades y profesionales</button>
+          <button type="button" class="chat-quick" data-bot-action="hours">🕒 Horarios y ubicación</button>
+          <button type="button" class="chat-quick" data-bot-action="preparation">📋 Preparación para una consulta</button>
+          <button type="button" class="chat-quick chat-quick-human" id="humanWhatsapp">👤 Hablar con una persona</button>
+        </div>
+        <form class="chat-input-row" id="chatInputForm">
+          <input id="chatInput" maxlength="120" autocomplete="off" placeholder="Escribí tu respuesta..." aria-label="Escribí tu respuesta">
+          <button class="btn chat-send" type="submit" aria-label="Enviar mensaje">Enviar</button>
+        </form>
+        <p class="chat-disclaimer" id="whatsappStatus">Asistente demostrativo: la agenda y los datos de ejemplo no son reales.</p>
       </div>
     </div>
   </div>
@@ -130,7 +145,7 @@
         <label>Email<input id="email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></label>
         <label class="full check-label"><input type="checkbox" id="consent" required> Confirmo que los datos son correctos y acepto el tratamiento de datos necesario para gestionar el turno.</label>
       </div>
-      <div class="privacy-note"><strong>Tu privacidad importa.</strong> El formulario de esta versión es demostrativo y no envía ni almacena datos reales. En producción, los datos deberán procesarse en un servidor seguro.</div>
+      <div class="privacy-note"><strong>Tu privacidad importa.</strong> Esta agenda puede funcionar en modo demostración. No ingreses datos reales hasta que la clínica habilite y asegure el servicio.</div>
       <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="bookingDialog">Cancelar</button><button type="submit" class="btn">Solicitar turno</button></div>
       <div id="bookingResult" class="result-message" role="status" hidden></div>
     </form>
@@ -143,11 +158,11 @@
       <label>DNI / Usuario<input inputmode="numeric" autocomplete="username" required placeholder="Tu DNI"></label>
       <label>Contraseña<input type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
       <button type="submit" class="btn full-width">Ingresar al portal</button>
-      <p class="small-muted">En la versión de demostración el acceso está desactivado. La versión real requerirá autenticación segura y habilitación previa por administración. El DNI no se usará como contraseña permanente.</p>
+      <p class="small-muted">Portal demostrativo: usá el DNI ficticio 30123456. No ingreses datos reales. En producción se implementará autenticación segura.</p>
       <div id="portalResult" class="result-message" role="status" hidden></div>
     </form>
   </dialog>
 
-  <script src="js/app.js"></script>
+  <script src="js/config.js"></script>\n  <script src="js/app.js"></script>
 </body>
 </html>

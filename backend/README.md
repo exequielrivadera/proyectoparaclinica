@@ -1,36 +1,14 @@
-# Backend inicial (no productivo)
+# Backend Clínica Demo
 
-Este directorio contiene una base de referencia en Flask/SQLite para orientar el desarrollo. No está conectado a la interfaz pública y no debe usarse con pacientes reales.
+Desde esta carpeta, en Windows: `py -m venv .venv`, activar `.venv`, `pip install -r requirements.txt`, copiar `.env.example` a `.env` y ejecutar `py app.py`.
 
-## Preparación local en PowerShell
+Abrí http://127.0.0.1:5000. El mismo Flask sirve la web y la API. No iniciar un segundo servidor estático en el puerto 5500. La salud de API se revisa en `/api/health`.
 
-```powershell
-cd backend
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
-```
+Demo únicamente con datos ficticios. El acceso a paneles no es autenticación de producción y el portal por DNI no verifica identidad. No usar con pacientes reales.
 
-Editar `.env` y colocar una `SECRET_KEY` aleatoria larga. Luego:
-
-```powershell
-py app.py
-```
-
-Probar `http://127.0.0.1:5000/api/health`.
-
-## Pendiente antes de producción
-
-- Alta segura del primer administrador y control de acceso.
-- Activación de cuentas por código temporal verificado, expiración y uso único.
-- Limitación de intentos, protección CSRF, cookies seguras, HTTPS y gestión de sesiones.
-- Verificación de correo/celular y consentimiento versionado.
-- Agenda configurable, transacciones y prevención de doble reserva.
-- Servicio SMTP, reintentos, cola de mensajes, plantillas y registro de entrega.
-- Políticas de autorización clínica, gestión de relaciones médico-paciente y permisos de publicación.
-- Escaneo de archivos, validación de MIME/tamaño, cifrado, retención, backups probados y monitoreo.
-- Auditoría protegida, pruebas, revisión de seguridad y cumplimiento legal.
-- Cambiar SQLite por PostgreSQL para una instalación multiusuario real y definir infraestructura de archivos privada.
-
-Las rutas de reservas y activación responden deliberadamente `501` para no simular una operación real insegura.
+### Flujo de consultorio y llamados (demo)
+- El backend crea la tabla `doctor_status` automáticamente al iniciar, incluso en una base SQLite existente.
+- El médico puede marcar el consultorio libre/ocupado.
+- Administración llama al paciente que recepción marcó como `Llegó`.
+- Administración puede repetir el llamado; el siguiente paciente no se habilita hasta que el llamado actual tenga dos anuncios registrados.
+- Tras el llamado, el médico debe volver a marcar el consultorio libre para habilitar el siguiente llamado.

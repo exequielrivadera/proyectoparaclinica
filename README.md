@@ -1,52 +1,45 @@
-# Clínica
+# Clínica Demo — Sindicato de Camioneros de La Rioja
 
-Demo responsive de una web de clínica/consultorio desarrollada por Pulso Digital. Incluye portada pública, especialidades, perfiles ficticios, prototipo de agenda, formulario de turnos, portal de pacientes desactivado y crédito discreto de Pulso Digital en el pie.
+Demo institucional con web pública, turnos, panel de Administración, panel Médico, portal Paciente y pantalla de llamados. Usa SQLite local para datos ficticios.
 
-## Importante: qué funciona y qué es demostración
+## Inicio en Windows (una sola terminal para el backend)
+1. Extraé todo el ZIP.
+2. Abrí PowerShell dentro de `clinica_demo_sindicato/backend`.
+3. Ejecutá:
+   ```powershell
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   Copy-Item .env.example .env
+   py app.py
+   ```
+4. Dejá esa terminal abierta y entrá a **http://127.0.0.1:5000**.
+5. Los paneles están en **http://127.0.0.1:5000/paneles.html**. Administración: `/admin.html`; médicos: `/medicos.html`; pacientes: `/pacientes.html`; llamados: `/llamados.html`.
+6. Para comprobar que el backend responde, abrí **http://127.0.0.1:5000/api/health**; debe aparecer `status: ok`.
 
-- La web pública y sus interacciones de interfaz funcionan localmente.
-- La disponibilidad mostrada es ficticia y se usa únicamente para probar la interfaz.
-- El formulario NO crea una reserva real y NO envía emails.
-- El portal de pacientes NO autentica usuarios ni expone estudios.
-- El panel médico/backend se entrega como un esqueleto inicial separado; requiere configuración y revisión antes de cualquier uso real.
-- No se deben cargar datos reales de pacientes ni estudios en esta demo.
-- Los nombres, perfiles, dirección y contacto son ficticios. El WhatsApp y correo institucional deben configurarse con los datos autorizados de la clínica.
+**Importante:** ya no abras `index.html` haciendo doble clic ni inicies `py -m http.server 5500`. La web y la API ahora se sirven desde el mismo backend para evitar `Failed to fetch`.
 
-## Abrir la demo
+## Pruebas de demostración
+- Usá únicamente los pacientes ficticios ya incluidos, por ejemplo DNI `30123456` (Juan Pérez) o `28987654` (María Gómez). No uses DNI real.
+- Administración: registrar paciente ficticio, buscarlo, consultar turnos, marcar llegada, llamar, reprogramar y cambiar estados de estudios.
+- Médicos: buscar el DNI ficticio `30123456`, guardar una nota no sensible de demostración y registrar un estudio ficticio.
+- Pacientes: consultar estudios publicados con DNI ficticio `30123456`. La descarga actual es un comprobante de texto ilustrativo, no un archivo médico real.
+- Llamados: abrir `/llamados.html`, activar sonido y generar un llamado desde Administración.
 
-1. Extraer el ZIP.
-2. Abrir una terminal dentro de la carpeta `Clinica`.
-3. Ejecutar `py -m http.server 8000`.
-4. Abrir `http://localhost:8000`.
+## Correo
+Las confirmaciones y recordatorios requieren configurar SMTP en `backend/.env`. Sin esos datos, el turno se guarda, pero no se envía correo.
 
-También puede publicarse como web estática en GitHub Pages para mostrar el diseño. GitHub Pages no ejecuta el backend Python y no sirve para alojar documentación clínica privada.
+## Publicación en la nube
+`render.yaml` ahora define un único servicio web para servir frontend y API en el mismo dominio. Importá el repositorio en Render y revisá el plan y disco persistente antes de desplegar. Las variables SMTP son opcionales para iniciar la demo; configurarlas para probar correos. La configuración usa SQLite persistente solo para demo, no es la arquitectura final.
 
-## Publicar en GitHub Pages
+## Limitaciones y seguridad
+Es un prototipo: los paneles no tienen autenticación real y el portal por DNI es solo simulación. No publicar con datos reales ni cargar información de afiliados. Antes de uso institucional se requieren autenticación y permisos por rol, verificación de identidad, archivos privados, auditoría, límites de solicitudes, HTTPS, backups y restauración. El esquema PostgreSQL incluido es una propuesta, pero el backend aún usa SQLite.
 
-Subir el contenido de esta carpeta al repositorio `proyectoclinica`, luego ir a **Settings → Pages → Deploy from a branch → main → /(root)**. La dirección esperada, si el repositorio y Pages están configurados, sería `https://exequielrivadera.github.io/proyectoclinica/`. La publicación debe verificarse en GitHub.
+## Flujo de disponibilidad y llamado al siguiente paciente
 
-## Backend inicial (opcional, no productivo)
+1. En Administración, filtrá la agenda por la fecha del turno. Cuando llega una persona, pulsá **Llegó** en su fila.
+2. En el panel Médico, seleccioná el profesional, indicá el consultorio y pulsá **Consultorio libre** cuando el médico haya terminado y esté listo para recibir a otra persona. Si vuelve a atender o necesita tiempo, pulsá **Estoy atendiendo**.
+3. En Administración aparecerá el estado del profesional. Pulsá **Llamar siguiente paciente** en la tarjeta de ese médico. El sistema elige el turno más temprano de esa fecha que esté marcado como **Llegó**, publica el llamado para la pantalla de sala de espera y cambia el consultorio a ocupado.
+4. La pantalla `llamados.html` debe permanecer abierta en un monitor/TV. Pulsá **Activar sonido** una vez para permitir el audio del navegador.
 
-Hay un ejemplo separado en `backend/` con Flask y SQLite para orientar la siguiente etapa. Requiere Python 3.11+, instalar dependencias y configurar variables de entorno. No está integrado a la web estática y no debe exponerse públicamente sin completar autenticación, autorización, CSRF, límites de intentos, HTTPS, auditoría, backups y revisión de seguridad.
-
-### Recomendaciones de seguridad y privacidad
-
-- DNI puede ser identificador de usuario, pero no debe ser contraseña permanente.
-- Activar cuentas con un código temporal de un solo uso por un canal verificado; exigir que el paciente cree una contraseña.
-- Estudios y documentos clínicos deben almacenarse fuera de carpetas públicas, con autorización por paciente/rol y enlaces protegidos.
-- La notificación por email debe evitar diagnósticos, resultados y otros datos clínicos sensibles.
-- En producción se requiere consentimiento y tratamiento conforme a la normativa argentina aplicable a datos personales y sensibles.
-- Antes de uso real, revisar requisitos legales, seguridad, permisos y operación clínica con profesionales competentes.
-
-## Marca
-
-El pie muestra “Diseñada por”, el texto “Pulso Digital” y el logotipo oficial negro proporcionado, guardado como `assets/pulsodigital-logo.png`.
-
-
-## Navegación interactiva y WhatsApp
-
-- Especialidades, Profesionales y La clínica abren vistas internas sin salir de la página.
-- Profesionales está organizado por rubro y cada perfil permite abrir el formulario de turno con médico/especialidad preseleccionados.
-- El botón flotante de WhatsApp permanece visible. El globo “¿Te asesoramos?” aparece al cargar y se desvanece cuando la persona empieza a desplazarse; al tocar el icono abre un globo de chat.
-- Para activar la salida real a WhatsApp, editar `WHATSAPP_NUMBER` en `js/app.js` con el número institucional en formato internacional y solo dígitos. Mientras no se configure, no se abre un número inventado.
-- Se quitaron las flechas decorativas de las tarjetas y la elevación/animación de las tarjetas de especialidades.
+El estado de consultorio se comparte entre los paneles mediante la base SQLite de la demo. La lista de profesionales de esta versión es fija y de demostración; antes de uso institucional deben implementarse registro/autenticación de usuarios y gestión real de profesionales.

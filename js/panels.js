@@ -1,0 +1,7 @@
+const API=(window.CLINICA_API_BASE||'').replace(/\/$/,'');
+const $=(s,r=document)=>r.querySelector(s);
+async function api(path,opts={}){let r;try{r=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}})}catch(e){throw Error('No se pudo conectar con el servidor. Iniciá el backend y abrí la demo en http://127.0.0.1:5000.')}const raw=await r.text();let d;try{d=raw?JSON.parse(raw):{}}catch{const hint=raw.includes('<title>')?raw.match(/<title>(.*?)<\/title>/i)?.[1]:'Respuesta HTML';throw Error('La API respondió HTML en vez de JSON (HTTP '+r.status+', '+hint+'). Revisá la terminal donde corre py app.py; suele indicar el error real.')}if(!r.ok)throw Error(d.error||'Error de conexión ('+r.status+')');return d}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dt(v){try{const d=new Date(v);return d.toLocaleDateString('es-AR')+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}catch{return v||''}}
+function msg(t,err=false){const el=$('#message');if(el){el.textContent=t;el.className='msg'+(err?' error':'');el.classList.remove('hidden')}}
+function statusLabel(s){return ({booked:'Reservado',arrived:'Llegó',called:'Llamado',attended:'Atendido',cancelled:'Cancelado',rescheduled:'Reprogramado',processing:'En proceso',available:'Disponible',delivered:'Entregado'})[s]||s}

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Llamado de pacientes | Clínica Demo</title><link rel="stylesheet" href="css/panels.css">
+<style>
+.display #patientName{min-height:1.25em}.display .room{min-height:1.4em}.screen-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:22px auto}.screen-actions button{font-size:1rem}.screen-status{font-size:.82rem;opacity:.75;margin-top:12px}.call-flash{animation:callFlash .7s ease-in-out 2}@keyframes callFlash{50%{transform:scale(1.025);opacity:.75}}
+</style></head>
+<body class="display">
+<div class="brand">SINDICATO DE CAMIONEROS · LA RIOJA</div>
+<p class="sub">LLAMADO A CONSULTORIO</p>
+<h1 id="patientName">Bienvenidos</h1>
+<div class="room" id="room">Por favor, aguarde a ser llamado</div>
+<p id="instruction">Cuando se realice un llamado, aparecerá aquí.</p>
+<div class="screen-actions"><button class="btn" id="sound">Activar sonido de la pantalla</button><button class="btn secondary" id="testVoice">Probar voz</button></div>
+<p id="screenStatus" class="screen-status" aria-live="polite">Conectando con el sistema…</p>
+<div class="previous" id="previous"></div>
+<p class="sub" style="font-size:.8rem;margin-top:35px">Pantalla institucional de demostración</p>
+<script src="js/config.js"></script><script src="js/panels.js"></script>
+<script>
+let soundEnabled=false,lastId=null,lastCall=null,refreshBusy=false;
+function speak(text){
+  if(!soundEnabled){$('#screenStatus').textContent='Activá el sonido para escuchar los llamados.';return false}
+  if(!('speechSynthesis' in window)){ $('#screenStatus').textContent='Este navegador no admite voz. Probá con Chrome o Edge actualizado.';return false }
+  try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='es-AR';u.rate=.92;u.pitch=1;u.volume=1;
+    const voices=window.speechSynthesis.getVoices();const spanish=voices.find(v=>/^es(-|_)/i.test(v.lang));if(spanish)u.voice=spanish;
+    u.onerror=(e)=>{$('#screenStatus').textContent='No se pudo reproducir la voz. Verificá el volumen y la salida de audio.'};
+    u.onend=()=>{$('#screenStatus').textContent='Pantalla conectada.'};window.speechSynthesis.speak(u);return true;
+  }catch(e){$('#screenStatus').textContent='Error al reproducir la voz: '+e.message;return false}
+}
+function announce(c){
+  $('#patientName').textContent=c.patient_name||'Paciente';
+  $('#room').textContent=c.room||'Dirigirse a recepción';
+  $('#instruction').textContent='Por favor, dirigirse al consultorio indicado.';
+  $('#patientName').classList.remove('call-flash');void $('#patientName').offsetWidth;$('#patientName').classList.add('call-flash');
+  if(soundEnabled)speak((c.patient_name||'Paciente')+', dirigirse a '+(c.room||'recepción'));
+  else $('#screenStatus').textContent='Llamado recibido. Activá el sonido para escuchar el anuncio.';
+}
+$('#sound').addEventListener('click',()=>{
+  soundEnabled=true;$('#sound').textContent='Sonido activado';
+  // El clic del usuario habilita el audio. Si ya había un llamado, se anuncia ahora.
+  if(lastCall){speak((lastCall.patient_name||'Paciente')+', dirigirse a '+(lastCall.room||'recepción'))}
+  else speak('Sonido activado. La pantalla está preparada para los llamados.');
+});
+$('#testVoice').addEventListener('click',()=>{
+  if(!soundEnabled){$('#screenStatus').textContent='Primero pulsá “Activar sonido de la pantalla”.';return}
+  speak('Prueba de audio. Paciente de demostración, dirigirse al consultorio número tres.');
+});
+async function refresh(){
+ if(refreshBusy)return;refreshBusy=true;
+ try{
+  const r=await api('/api/display/calls');
+  const calls=Array.isArray(r.calls)?r.calls:[];
+  $('#screenStatus').textContent='Pantalla conectada.';
+  if(calls.length){const c=calls[0];lastCall=c;
+    if(String(c.id)!==String(lastId)){lastId=c.id;announce(c)}
+  }
+ }catch(e){$('#screenStatus').textContent='No se pudo actualizar la pantalla. Verificá la conexión con el servidor.';}
+ finally{refreshBusy=false}
+}
+refresh();setInterval(refresh,1500);
+</script></body></html>
