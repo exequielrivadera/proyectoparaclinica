@@ -1,4 +1,4 @@
 
-// URL pública del backend Flask desplegado en SnapDeploy.
+ // URL pública del backend Flask desplegado en Render.
 // La web pública se encuentra en GitHub Pages.
-window.CLINICA_API_BASE = 'https://proyectoparaclinica-a8473.containers.snapdeploy.app';
+window.CLINICA_API_BASE = 'https://proyectoparaclinica-api.onrender.com';
