@@ -17,8 +17,3 @@
 4. Probá el ingreso de un sobreturno con datos ficticios, marcá el consultorio del médico como libre y llamá al siguiente paciente para verificar la pantalla `llamados.html`.
 
 Este proyecto continúa siendo una demo. No usar con datos médicos reales sin autenticación, autorización, privacidad, respaldos y persistencia de producción.
-
-
-## Conexión con el backend
-
-`js/config.js` apunta al dominio `https://clinica-demo-sindicato.onrender.com`, coherente con el nombre del servicio en `render.yaml`. Si el servicio existente en Render tiene otro dominio, copiar el dominio real desde Render → Settings y actualizar `js/config.js`. `render.yaml` permite el origen de GitHub Pages y el origen `null` para pruebas abriendo archivos locales; para uso normal, probar desde GitHub Pages. Después de cambiar `render.yaml`, aplicar los cambios al servicio de Render y esperar el despliegue.

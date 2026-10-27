@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: clinica-demo-sindicato
+    name: proyectoparaclinica-api
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
@@ -18,4 +18,4 @@ services:
       - key: RUN_SCHEDULER
         value: "true"
       - key: CORS_ORIGINS
-        value: https://exequielrivadera.github.io,null,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000
+        value: https://exequielrivadera.github.io,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000

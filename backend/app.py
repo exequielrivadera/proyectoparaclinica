@@ -39,7 +39,7 @@ def public_assets(filename):
     if PROJECT_ROOT.resolve() not in target.parents or not target.is_file():
         abort(404)
     return send_from_directory(PROJECT_ROOT, normalized)
-allowed_origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000").split(",") if x.strip()]
+allowed_origins = [x.strip() for x in os.getenv("CORS_ORIGINS", "https://exequielrivadera.github.io,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000").split(",") if x.strip()]
 CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("clinica")
