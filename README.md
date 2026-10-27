@@ -43,3 +43,10 @@ Es un prototipo: los paneles no tienen autenticación real y el portal por DNI e
 4. La pantalla `llamados.html` debe permanecer abierta en un monitor/TV. Pulsá **Activar sonido** una vez para permitir el audio del navegador.
 
 El estado de consultorio se comparte entre los paneles mediante la base SQLite de la demo. La lista de profesionales de esta versión es fija y de demostración; antes de uso institucional deben implementarse registro/autenticación de usuarios y gestión real de profesionales.
+
+
+## GitHub Pages y API (importante)
+
+GitHub Pages solo publica archivos estáticos; no ejecuta `backend/app.py`. En consecuencia, las funciones que consultan o guardan turnos, estados, estudios y llamados necesitan que Flask esté publicado en un servidor accesible por HTTPS. Si la web se abre desde GitHub Pages sin configurar esa API, las solicitudes `/api/...` se dirigen a GitHub Pages y pueden devolver HTML/404/405 en vez de JSON.
+
+Cuando tengas la URL pública del backend, configurá `window.CLINICA_API_BASE` en `js/config.js` con esa URL (sin barra final), y habilitá en `backend/.env` la URL de GitHub Pages en `CORS_ORIGINS`. No coloques secretos en `js/config.js`. La demo sigue siendo pública y no tiene autenticación real: usar únicamente datos ficticios; no cargar estudios ni datos reales.
