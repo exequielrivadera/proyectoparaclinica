@@ -1,10 +1,11 @@
 # Clínica Demo — Sindicato de Camioneros de La Rioja
 
-Demo institucional con web pública, turnos, panel de Administración, panel Médico, portal Paciente y pantalla de llamados. Usa SQLite local para datos ficticios.
+Demo institucional con web pública, solicitud de turnos, portal de pacientes ficticios, panel de Administración, panel Médico y pantalla de llamados. El backend Flask comparte una base SQLite para que las acciones se reflejen entre los paneles.
 
-## Inicio en Windows (una sola terminal para el backend)
-1. Extraé todo el ZIP.
-2. Abrí PowerShell dentro de `clinica_demo_sindicato/backend`.
+## Para probar todo localmente en Windows
+
+1. Extraé el ZIP.
+2. Abrí PowerShell dentro de la carpeta `backend`.
 3. Ejecutá:
    ```powershell
    py -m venv .venv
@@ -13,40 +14,59 @@ Demo institucional con web pública, turnos, panel de Administración, panel Mé
    Copy-Item .env.example .env
    py app.py
    ```
-4. Dejá esa terminal abierta y entrá a **http://127.0.0.1:5000**.
-5. Los paneles están en **http://127.0.0.1:5000/paneles.html**. Administración: `/admin.html`; médicos: `/medicos.html`; pacientes: `/pacientes.html`; llamados: `/llamados.html`.
-6. Para comprobar que el backend responde, abrí **http://127.0.0.1:5000/api/health**; debe aparecer `status: ok`.
+4. Dejá esa terminal abierta y entrá a `http://127.0.0.1:5000`.
+5. Comprobá el backend en `http://127.0.0.1:5000/api/health`; debe devolver JSON con `status: ok`.
+6. Abrí `http://127.0.0.1:5000/paneles.html`. Desde ahí accedés a Administración, Médicos, Pacientes y Pantalla de llamados.
 
-**Importante:** ya no abras `index.html` haciendo doble clic ni inicies `py -m http.server 5500`. La web y la API ahora se sirven desde el mismo backend para evitar `Failed to fetch`.
+No abras `index.html` con doble clic ni uses Live Server para probar funciones dinámicas: la página y la API deben servirse desde Flask en el mismo puerto.
 
-## Pruebas de demostración
-- Usá únicamente los pacientes ficticios ya incluidos, por ejemplo DNI `30123456` (Juan Pérez) o `28987654` (María Gómez). No uses DNI real.
-- Administración: registrar paciente ficticio, buscarlo, consultar turnos, marcar llegada, llamar, reprogramar y cambiar estados de estudios.
-- Médicos: buscar el DNI ficticio `30123456`, guardar una nota no sensible de demostración y registrar un estudio ficticio.
-- Pacientes: consultar estudios publicados con DNI ficticio `30123456`. La descarga actual es un comprobante de texto ilustrativo, no un archivo médico real.
-- Llamados: abrir `/llamados.html`, activar sonido y generar un llamado desde Administración.
+## Para que la demo funcione online en GitHub Pages
 
-## Correo
-Las confirmaciones y recordatorios requieren configurar SMTP en `backend/.env`. Sin esos datos, el turno se guarda, pero no se envía correo.
+GitHub Pages no ejecuta Python. Hay que desplegar el backend Flask por separado y conectar la web a su URL HTTPS. El archivo `render.yaml` prepara un servicio de demo en Render.
 
-## Publicación en la nube
-`render.yaml` ahora define un único servicio web para servir frontend y API en el mismo dominio. Importá el repositorio en Render y revisá el plan y disco persistente antes de desplegar. Las variables SMTP son opcionales para iniciar la demo; configurarlas para probar correos. La configuración usa SQLite persistente solo para demo, no es la arquitectura final.
+### Paso A — Publicar el backend
 
-## Limitaciones y seguridad
-Es un prototipo: los paneles no tienen autenticación real y el portal por DNI es solo simulación. No publicar con datos reales ni cargar información de afiliados. Antes de uso institucional se requieren autenticación y permisos por rol, verificación de identidad, archivos privados, auditoría, límites de solicitudes, HTTPS, backups y restauración. El esquema PostgreSQL incluido es una propuesta, pero el backend aún usa SQLite.
+1. Subí estos cambios al repositorio `proyectoparaclinica`.
+2. Entrá en Render y elegí **New + → Blueprint** (o desplegá un servicio web desde el repositorio).
+3. Seleccioná el repositorio `exequielrivadera/proyectoparaclinica` y aplicá la configuración de `render.yaml`.
+4. Esperá a que el servicio termine el despliegue. Render asignará una URL HTTPS similar a `https://nombre-del-servicio.onrender.com`.
+5. Abrí `https://TU-URL.onrender.com/api/health`. Debe devolver JSON con `status: ok`. Reemplazá `TU-URL` por el dominio real que te asignó Render.
 
-## Flujo de disponibilidad y llamado al siguiente paciente
+El plan gratuito puede suspenderse por inactividad y el almacenamiento local puede perderse al reiniciar o volver a desplegar. Esto sirve para una presentación con datos ficticios, no para producción ni para garantizar persistencia.
 
-1. En Administración, filtrá la agenda por la fecha del turno. Cuando llega una persona, pulsá **Llegó** en su fila.
-2. En el panel Médico, seleccioná el profesional, indicá el consultorio y pulsá **Consultorio libre** cuando el médico haya terminado y esté listo para recibir a otra persona. Si vuelve a atender o necesita tiempo, pulsá **Estoy atendiendo**.
-3. En Administración aparecerá el estado del profesional. Pulsá **Llamar siguiente paciente** en la tarjeta de ese médico. El sistema elige el turno más temprano de esa fecha que esté marcado como **Llegó**, publica el llamado para la pantalla de sala de espera y cambia el consultorio a ocupado.
-4. La pantalla `llamados.html` debe permanecer abierta en un monitor/TV. Pulsá **Activar sonido** una vez para permitir el audio del navegador.
+### Paso B — Conectar GitHub Pages al backend
 
-El estado de consultorio se comparte entre los paneles mediante la base SQLite de la demo. La lista de profesionales de esta versión es fija y de demostración; antes de uso institucional deben implementarse registro/autenticación de usuarios y gestión real de profesionales.
+1. Abrí `js/config.js`.
+2. Cambiá la línea `window.CLINICA_API_BASE = '';` por la URL HTTPS real de Render, sin barra al final. Ejemplo de formato:
+   ```js
+   window.CLINICA_API_BASE = 'https://nombre-del-servicio.onrender.com';
+   ```
+3. Guardá y subí el cambio a GitHub:
+   ```powershell
+   git add js/config.js render.yaml README.md js/app.js js/panels.js service-worker.js
+   git commit -m "Conecta la demo con el backend desplegado"
+   git push origin main
+   ```
+4. Esperá a que GitHub Pages publique el commit. Abrí la web y hacé `Ctrl + F5`.
+5. Si el navegador bloquea la solicitud por CORS, revisá en Render que `CORS_ORIGINS` incluya `https://exequielrivadera.github.io` (solo el origen, sin `/proyectoparaclinica/`) y volvé a desplegar.
 
+También podés presentar directamente la URL de Render: el backend sirve la página principal y los recursos estáticos en el mismo dominio, así que no requiere configurar una segunda URL de API. GitHub Pages seguirá disponible como frontend estático cuando completes el Paso B.
 
-## GitHub Pages y API (importante)
+## Qué incluye la demo
 
-GitHub Pages solo publica archivos estáticos; no ejecuta `backend/app.py`. En consecuencia, las funciones que consultan o guardan turnos, estados, estudios y llamados necesitan que Flask esté publicado en un servidor accesible por HTTPS. Si la web se abre desde GitHub Pages sin configurar esa API, las solicitudes `/api/...` se dirigen a GitHub Pages y pueden devolver HTML/404/405 en vez de JSON.
+- Solicitud de turnos y disponibilidad consultadas en el backend.
+- Panel de administración para agenda, pacientes, estados y llamados.
+- Panel médico para disponibilidad del consultorio, notas y estudios ficticios.
+- Portal de paciente con registros de demostración.
+- Pantalla de llamados para recepción/sala de espera.
+- Envío de confirmaciones y recordatorios por correo, si se configuran credenciales SMTP en `backend/.env` o variables de entorno del servicio.
 
-Cuando tengas la URL pública del backend, configurá `window.CLINICA_API_BASE` en `js/config.js` con esa URL (sin barra final), y habilitá en `backend/.env` la URL de GitHub Pages en `CORS_ORIGINS`. No coloques secretos en `js/config.js`. La demo sigue siendo pública y no tiene autenticación real: usar únicamente datos ficticios; no cargar estudios ni datos reales.
+Los recordatorios por correo no se envían hasta que SMTP esté configurado. El servicio gratuito puede dormir cuando no se utiliza, por lo que el primer acceso puede demorar.
+
+## Datos de demostración
+
+Usá exclusivamente datos ficticios incluidos en la demo, por ejemplo DNI `30123456` o `28987654`. No ingreses datos reales de pacientes ni subas estudios reales.
+
+## Seguridad y límites
+
+Esta versión es exclusivamente para presentación. Los paneles y el acceso de pacientes **no tienen autenticación real ni permisos de producción**; los datos y estudios de demo pueden quedar expuestos públicamente. Antes de usarla con una clínica real hay que implementar autenticación por roles, autorización en cada endpoint, verificación de identidad, almacenamiento privado de estudios, auditoría, límites de solicitudes, copias de seguridad, recuperación y una base de datos administrada. No usar con información médica real.

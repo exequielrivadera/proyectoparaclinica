@@ -1,10 +1,17 @@
 const API_BASE = (window.CLINICA_API_BASE !== undefined ? window.CLINICA_API_BASE : ((location.hostname === '127.0.0.1' || location.hostname === 'localhost') ? 'http://127.0.0.1:5000' : '')).replace(/\/$/, '');
 async function apiRequest(path, options={}) {
-  const response = await fetch(API_BASE + path, {
+  if (location.hostname.endsWith('github.io') && !API_BASE) {
+    throw new Error('La API todavía no está conectada. Publicá el backend Flask en Render y configurá su URL HTTPS en js/config.js.');
+  }
+  let response;
+  try { response = await fetch(API_BASE + path, {
     ...options,
     headers: {'Content-Type':'application/json', ...(options.headers||{})}
-  });
-  const data = await response.json().catch(()=>({error:'Respuesta inválida del servidor.'}));
+  }); } catch (error) {
+    if (error instanceof TypeError) throw new Error('No se pudo conectar con el backend. Verificá la URL HTTPS de la API y la configuración CORS.');
+    throw error;
+  }
+  const data = await response.json().catch(()=>({error:'El backend devolvió una respuesta que no es JSON. Revisá la URL y los registros del servidor.'}));
   if (!response.ok) throw new Error(data.error || 'No se pudo completar la solicitud.');
   return data;
 }

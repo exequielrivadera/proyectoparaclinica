@@ -1,4 +1,4 @@
-const CACHE = "clinica-demo-v9-nav-institucional";
+const CACHE = "clinica-demo-v10-api-config";
 const APP_FILES = [
   "./",
   "./index.html",

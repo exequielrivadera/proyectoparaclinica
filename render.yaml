@@ -5,31 +5,17 @@ services:
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --workers 1 --bind 0.0.0.0:$PORT
-    plan: starter
+    plan: free
     envVars:
       - key: DEMO_MODE
         value: "true"
       - key: TIMEZONE
         value: America/Argentina/Buenos_Aires
       - key: DATABASE_PATH
-        value: /var/data/clinica.sqlite3
+        value: instance/clinica.sqlite3
       - key: HOST
         value: 0.0.0.0
       - key: RUN_SCHEDULER
         value: "true"
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USE_SSL
-        value: "false"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: SMTP_FROM
-        sync: false
-    disk:
-      name: clinica-demo-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: CORS_ORIGINS
+        value: https://exequielrivadera.github.io,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000
