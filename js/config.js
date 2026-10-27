@@ -1,4 +1,3 @@
-
- // URL pública del backend Flask desplegado en Render.
-// La web pública se encuentra en GitHub Pages.
-window.CLINICA_API_BASE = 'https://proyectoparaclinica-api.onrender.com';
+// Backend Flask definido en render.yaml (servicio Render: clinica-demo-sindicato).
+// Si Render muestra otro dominio en Settings, reemplazarlo aquí por la URL real.
+window.CLINICA_API_BASE = 'https://clinica-demo-sindicato.onrender.com';

@@ -78,6 +78,7 @@ def init_db():
           dni TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL DEFAULT '',
           specialty TEXT NOT NULL, doctor TEXT NOT NULL,
           starts_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'booked',
+          appointment_type TEXT NOT NULL DEFAULT 'turno',
           created_at TEXT NOT NULL, confirmation_sent_at TEXT,
           reminder_24h_sent_at TEXT, reminder_3h_sent_at TEXT,
           UNIQUE(doctor, starts_at)
@@ -111,6 +112,10 @@ def init_db():
           is_free INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL
         );
         """)
+        # Migración compatible con bases SQLite ya creadas antes de incorporar sobreturnos.
+        appointment_columns = {row["name"] for row in con.execute("PRAGMA table_info(appointments)").fetchall()}
+        if "appointment_type" not in appointment_columns:
+            con.execute("ALTER TABLE appointments ADD COLUMN appointment_type TEXT NOT NULL DEFAULT 'turno'")
         # Demo patient data only. These records are fictional and safe for a walkthrough.
         con.execute("INSERT OR IGNORE INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
                     ("30123456","Juan","Pérez","juan.demo@example.com","3804000000",now_local().isoformat()))
@@ -332,6 +337,51 @@ def admin_create_patient():
             con.execute("INSERT INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",(dni,first,last,str(d.get("email","")),str(d.get("phone","")),now_local().isoformat()))
     except sqlite3.IntegrityError: return jsonify(error="Ya existe un paciente con ese DNI."),409
     return jsonify(ok=True,message="Paciente de prueba registrado."),201
+
+@app.post("/api/admin/overbooking")
+def admin_create_overbooking():
+    """Registra un paciente presencial y lo incorpora a la cola del médico como sobreturno."""
+    d = request.get_json(silent=True) or {}
+    first = str(d.get("first_names", "")).strip()
+    last = str(d.get("last_names", "")).strip()
+    dni = re.sub(r"\\D", "", str(d.get("dni", "")))
+    email = str(d.get("email", "")).strip()
+    phone = str(d.get("phone", "")).strip()
+    doctor = str(d.get("doctor", "")).strip()
+
+    known = {name for names in DOCTORS.values() for name in names}
+    if not first or not last or not re.fullmatch(r"\\d{7,9}", dni):
+        return jsonify(error="Completá nombres, apellidos y un DNI válido."), 400
+    if doctor not in known:
+        return jsonify(error="Seleccioná un médico válido para el sobreturno."), 400
+
+    specialty = next((specialty for specialty, names in DOCTORS.items() if doctor in names), "Atención presencial")
+    # Los sobreturnos no ocupan un turno reservado: se registran con la hora de llegada,
+    # estado 'arrived' y microsegundos para permitir varios ingresos seguidos al mismo médico.
+    arrived_at = now_local().isoformat(timespec="microseconds")
+    with connect() as con:
+        existing = con.execute("SELECT id FROM patients WHERE dni=?", (dni,)).fetchone()
+        if existing:
+            con.execute("""UPDATE patients SET first_names=?, last_names=?,
+                email=CASE WHEN ? <> '' THEN ? ELSE email END,
+                phone=CASE WHEN ? <> '' THEN ? ELSE phone END
+                WHERE dni=?""", (first, last, email, email, phone, phone, dni))
+        else:
+            con.execute("INSERT INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
+                        (dni, first, last, email, phone, arrived_at))
+        try:
+            cur = con.execute("""INSERT INTO appointments
+                (first_names,last_names,dni,email,phone,specialty,doctor,starts_at,status,appointment_type,created_at)
+                VALUES(?,?,?,?,?,?,?,?, 'arrived','sobreturno',?)""",
+                (first, last, dni, email, phone, specialty, doctor, arrived_at, arrived_at))
+        except sqlite3.IntegrityError:
+            return jsonify(error="No se pudo registrar el sobreturno. Actualizá la agenda e intentá nuevamente."), 409
+        appointment_id = cur.lastrowid
+
+    return jsonify(ok=True, id=appointment_id, doctor=doctor, specialty=specialty,
+                   appointment_type="sobreturno", status="arrived",
+                   message=f"Paciente registrado como sobreturno y agregado a la lista de {doctor}. Ya figura como llegado y puede llamarse desde Administración."), 201
+
 
 @app.post("/api/admin/appointments/<int:aid>/status")
 def admin_appointment_status(aid):

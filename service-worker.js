@@ -1,8 +1,12 @@
-const CACHE = "clinica-demo-v10-api-config";
+const CACHE = "clinica-demo-v11-sobreturnos-estetica";
 const APP_FILES = [
   "./",
   "./index.html",
   "./paneles.html",
+  "./admin.html",
+  "./medicos.html",
+  "./pacientes.html",
+  "./llamados.html",
   "./css/styles.css",
   "./css/panels.css",
   "./js/config.js",
