@@ -74,3 +74,12 @@ hr{border:0;border-top:1px solid var(--line);margin:22px 0}
 @keyframes callFlash{50%{transform:scale(1.025);opacity:.75}}
 @media(max-width:900px){.span-8,.span-6,.span-4{grid-column:span 12}.wrap{margin:22px auto}.card{padding:17px}}
 @media(max-width:760px){.top{align-items:flex-start;padding:14px 16px}.top nav{width:100%}.top nav a{padding:8px 11px}.wrap{padding:0 12px}.card{padding:15px}.grid{gap:12px}th,td{padding:9px 8px}.btn{padding:10px 14px}}
+
+/* Panel médico: controles de disponibilidad alineados en una única fila */
+.availability-toolbar{display:grid;grid-template-columns:minmax(190px,1.35fr) minmax(155px,1fr) minmax(145px,auto) minmax(145px,auto) minmax(150px,auto);gap:12px;align-items:end;margin-top:10px}
+.availability-toolbar .availability-field{min-width:0}
+.availability-toolbar label{margin-top:0}
+.availability-toolbar .availability-action{min-width:0;display:flex;align-items:flex-end}
+.availability-toolbar .availability-action .btn{width:100%;min-height:44px;margin:0;white-space:nowrap;padding:10px 13px}
+@media(max-width:1050px){.availability-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-toolbar .availability-action .btn{width:100%}}
+@media(max-width:520px){.availability-toolbar{grid-template-columns:minmax(0,1fr)}}

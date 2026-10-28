@@ -1,4 +1,4 @@
-const CACHE = "clinica-demo-v12-reserva-profesional-fijo";
+const CACHE = "clinica-demo-v13-botones-medico-alineados";
 const APP_FILES = [
   "./",
   "./index.html",
