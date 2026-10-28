@@ -211,7 +211,6 @@ $("#bookingForm").addEventListener("submit",async e=>{
       first_names:$("#firstNames").value.trim(),
       last_names:$("#lastNames").value.trim(),
       dni:$("#dni").value.trim(),
-      sex:$("#sex").value,
       email:$("#email").value.trim(),
       phone:$("#phone").value.trim(),
       specialty,doctor,date:dateInput.value,time:chosen,consent:$("#consent").checked

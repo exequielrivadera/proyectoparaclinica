@@ -1,4 +1,4 @@
-const CACHE = "clinica-demo-v14-pacientes-medicos-turnos";
+﻿const CACHE = "clinica-demo-v16-fix-reserva-pacientes-medicos";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -51,3 +51,4 @@ self.addEventListener("fetch", (event) => {
       })
   );
 });
+
