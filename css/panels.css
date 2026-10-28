@@ -74,12 +74,3 @@ hr{border:0;border-top:1px solid var(--line);margin:22px 0}
 @keyframes callFlash{50%{transform:scale(1.025);opacity:.75}}
 @media(max-width:900px){.span-8,.span-6,.span-4{grid-column:span 12}.wrap{margin:22px auto}.card{padding:17px}}
 @media(max-width:760px){.top{align-items:flex-start;padding:14px 16px}.top nav{width:100%}.top nav a{padding:8px 11px}.wrap{padding:0 12px}.card{padding:15px}.grid{gap:12px}th,td{padding:9px 8px}.btn{padding:10px 14px}}
-
-/* Controles de disponibilidad: alineación estable en una misma fila */
-.availability-controls{display:grid;grid-template-columns:minmax(170px,1.15fr) minmax(150px,1fr) auto auto auto;gap:12px;align-items:end}
-.availability-controls>div{min-width:0;flex:initial}
-.availability-controls label{margin-top:0}
-.availability-action{display:flex;align-items:flex-end}
-.availability-action .btn{margin-top:0;min-height:42px;white-space:nowrap}
-@media(max-width:900px){.availability-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-action{align-items:stretch}.availability-action .btn{width:100%;white-space:normal}}
-@media(max-width:480px){.availability-controls{grid-template-columns:1fr}.availability-action .btn{width:100%}}

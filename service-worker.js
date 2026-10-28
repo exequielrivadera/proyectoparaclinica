@@ -1,4 +1,4 @@
-const CACHE = "clinica-demo-v11-sobreturnos-estetica";
+const CACHE = "clinica-demo-v12-reserva-profesional-fijo";
 const APP_FILES = [
   "./",
   "./index.html",

@@ -32,43 +32,77 @@ $("#year").textContent = new Date().getFullYear();
 function localDate(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,10); }
 dateInput.min = localDate(new Date());
 dateInput.value = localDate(new Date(Date.now()+86400000));
+const DOCTORS_BY_SPECIALTY={
+  "Cardiología":["Dra. Ana López"],
+  "Clínica Médica":["Dr. Martín Pérez"],
+  "Pediatría":["Dra. Sofía Gómez"],
+  "Dermatología":["Profesional a incorporar"],
+  "Ginecología":["Profesional a incorporar"],
+  "Traumatología":["Profesional a incorporar"]
+};
+const SPECIALTY_BY_DOCTOR={
+  "Dra. Ana López":"Cardiología",
+  "Dr. Martín Pérez":"Clínica Médica",
+  "Dra. Sofía Gómez":"Pediatría"
+};
+let availabilityRequestId=0;
+let loadedAvailabilityKey="";
+
+function populateDoctorOptions(preferred=""){
+  const specialty=specialtySelect.value;
+  const available=specialty ? (DOCTORS_BY_SPECIALTY[specialty]||[]) : [...new Set(Object.values(DOCTORS_BY_SPECIALTY).flat())];
+  const options=[new Option("Cualquier profesional", ""), ...available.map(name=>new Option(name,name))];
+  doctorSelect.replaceChildren(...options);
+  if(preferred && available.includes(preferred)) doctorSelect.value=preferred;
+  else doctorSelect.value="";
+}
 function showBooking({specialty="",doctor=""}={}) {
-  if(specialty) specialtySelect.value=specialty;
-  if(doctor) doctorSelect.value=doctor;
+  // Cada apertura comienza con una selección coherente; no reutilizar valores de una reserva anterior.
+  specialtySelect.value=specialty || SPECIALTY_BY_DOCTOR[doctor] || "";
+  populateDoctorOptions(doctor);
+  timeSelect.innerHTML="";
+  timeSelect.add(new Option("Elegí especialidad y fecha",""));
+  loadedAvailabilityKey="";
   result.hidden=true;
   bookingDialog.showModal();
   refreshSlots();
 }
 $$("[data-open-booking]").forEach(b=>b.addEventListener("click",()=>showBooking()));
 $$("[data-specialty]").forEach(b=>b.addEventListener("click",()=>showBooking({specialty:b.dataset.specialty})));
-$$("[data-doctor]").forEach(b=>b.addEventListener("click",()=>showBooking({doctor:b.dataset.doctor})));
+$$("[data-doctor]").forEach(b=>b.addEventListener("click",()=>showBooking({doctor:b.dataset.doctor,specialty:SPECIALTY_BY_DOCTOR[b.dataset.doctor]||""})));
 $("#openPortal").addEventListener("click",()=>portalDialog.showModal());
 $$("[data-close]").forEach(b=>b.addEventListener("click",()=>$("#"+b.dataset.close).close()));
 $("#navToggle").addEventListener("click",()=>{const nav=$("#mainNav");nav.classList.toggle("open");$("#navToggle").setAttribute("aria-expanded",nav.classList.contains("open")?"true":"false")});
-$$('#mainNav a').forEach(a=>a.addEventListener("click",()=>$("#mainNav").classList.remove("open")));
-dateInput.addEventListener("change",refreshSlots);
-specialtySelect.addEventListener("change",refreshSlots);
-doctorSelect.addEventListener("change",refreshSlots);
+$$("#mainNav a").forEach(a=>a.addEventListener("click",()=>$("#mainNav").classList.remove("open")));
+ dateInput.addEventListener("change",refreshSlots);
+specialtySelect.addEventListener("change",()=>{
+  populateDoctorOptions();
+  refreshSlots();
+});
+doctorSelect.addEventListener("change",()=>{
+  const doctor=doctorSelect.value;
+  const doctorSpecialty=SPECIALTY_BY_DOCTOR[doctor];
+  // Si se elige explícitamente un profesional, acompañar esa elección con su especialidad.
+  if(doctorSpecialty && specialtySelect.value!==doctorSpecialty){
+    specialtySelect.value=doctorSpecialty;
+    populateDoctorOptions(doctor);
+  }
+  refreshSlots();
+});
 
 function getChosenDoctor(){
-  const mapping={
-    "Cardiología":"Dra. Ana López",
-    "Clínica Médica":"Dr. Martín Pérez",
-    "Pediatría":"Dra. Sofía Gómez"
-  };
+  const specialty=specialtySelect.value;
   const selected=doctorSelect.value;
-  const valid={
-    "Cardiología":["Dra. Ana López"],
-    "Clínica Médica":["Dr. Martín Pérez"],
-    "Pediatría":["Dra. Sofía Gómez"],
-    "Dermatología":["Profesional a incorporar"],
-    "Ginecología":["Profesional a incorporar"],
-    "Traumatología":["Profesional a incorporar"]
-  };
-  return (valid[specialtySelect.value]||[]).includes(selected)
-    ? selected : (mapping[specialtySelect.value] || "Profesional a incorporar");
+  const valid=DOCTORS_BY_SPECIALTY[specialty]||[];
+  if(selected && valid.includes(selected)) return selected;
+  return valid[0] || "";
+}
+function currentAvailabilityKey(){
+  return JSON.stringify({specialty:specialtySelect.value,doctor:getChosenDoctor(),date:dateInput.value});
 }
 async function refreshSlots(){
+  const requestId=++availabilityRequestId;
+  loadedAvailabilityKey="";
   const day=dateInput.value;
   timeSelect.innerHTML="";
   demandNote.hidden=true;
@@ -79,11 +113,17 @@ async function refreshSlots(){
   }
   const specialty=specialtySelect.value;
   const chosenDoctor=getChosenDoctor();
+  if(!chosenDoctor){
+    timeSelect.innerHTML=""; timeSelect.add(new Option("Elegí una especialidad válida",""));
+    note.textContent="Seleccioná una especialidad para ver sus profesionales."; return;
+  }
+  const requestKey=JSON.stringify({specialty,doctor:chosenDoctor,date:day});
   timeSelect.add(new Option("Consultando horarios…",""));
   note.textContent="Consultando disponibilidad de la agenda…";
   try{
     const params=new URLSearchParams({specialty,date:day,doctor:chosenDoctor});
     const data=await apiRequest('/api/availability?'+params.toString());
+    if(requestId!==availabilityRequestId || requestKey!==currentAvailabilityKey()) return;
     timeSelect.innerHTML="";
     if(!data.slots || !data.slots.length){
       timeSelect.add(new Option("Sin horarios disponibles",""));
@@ -92,6 +132,7 @@ async function refreshSlots(){
     }
     timeSelect.add(new Option("Seleccionar horario",""));
     data.slots.forEach(t=>timeSelect.add(new Option(t,t)));
+    loadedAvailabilityKey=requestKey;
     note.textContent=`${data.slots.length} horarios ${data.demo?'de demostración':'disponibles'} para ${specialty}.`;
     if(data.slots.length<=3){
       demandNote.hidden=false; demandNote.className="demand-alert";
@@ -100,6 +141,7 @@ async function refreshSlots(){
         :"Quedan pocos horarios disponibles para esta fecha.";
     }
   }catch(error){
+    if(requestId!==availabilityRequestId) return;
     timeSelect.innerHTML="";
     timeSelect.add(new Option("Agenda no disponible",""));
     note.textContent=`No pudimos consultar la agenda: ${error.message || "error de conexión"}. Revisá la terminal del backend.`;
@@ -109,9 +151,13 @@ $("#bookingForm").addEventListener("submit",async e=>{
   e.preventDefault();
   if(!$("#consent").checked) return;
   const chosen=timeSelect.value;
-  if(!chosen){note.textContent="Elegí un horario disponible antes de continuar.";return}
   const specialty=specialtySelect.value;
   const doctor=getChosenDoctor();
+  if(!chosen){note.textContent="Elegí un horario disponible antes de continuar.";return}
+  if(!doctor || loadedAvailabilityKey!==currentAvailabilityKey()) {
+    note.textContent="La disponibilidad cambió porque modificaste el profesional, la especialidad o la fecha. Esperá a que se actualicen los horarios y elegí uno nuevamente.";
+    await refreshSlots(); return;
+  }
   const submitButton=$("#bookingForm button[type='submit']");
   submitButton.disabled=true; submitButton.textContent="Guardando turno…";
   result.hidden=false;
