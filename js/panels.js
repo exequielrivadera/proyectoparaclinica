@@ -4,4 +4,4 @@ async function api(path,opts={}){if(location.hostname.endsWith('github.io')&&!AP
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dt(v){try{const d=new Date(v);return d.toLocaleDateString('es-AR')+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}catch{return v||''}}
 function msg(t,err=false){const el=$('#message');if(el){el.textContent=t;el.className='msg'+(err?' error':'');el.classList.remove('hidden')}}
-function statusLabel(s){return ({booked:'Reservado',arrived:'Llegó',called:'Llamado',attended:'Atendido',cancelled:'Cancelado',rescheduled:'Reprogramado',processing:'En proceso',available:'Disponible',delivered:'Entregado'})[s]||s}
+function statusLabel(s){return ({booked:'Reservado',arrived:'Llegó',called:'Llamado',in_consultation:'En atención',attended:'Atendido',cancelled:'Cancelado',rescheduled:'Reprogramado',processing:'En proceso',available:'Disponible',delivered:'Entregado'})[s]||s}

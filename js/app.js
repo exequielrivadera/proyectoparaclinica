@@ -32,21 +32,27 @@ $("#year").textContent = new Date().getFullYear();
 function localDate(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().slice(0,10); }
 dateInput.min = localDate(new Date());
 dateInput.value = localDate(new Date(Date.now()+86400000));
-const DOCTORS_BY_SPECIALTY={
-  "Cardiología":["Dra. Ana López"],
-  "Clínica Médica":["Dr. Martín Pérez"],
-  "Pediatría":["Dra. Sofía Gómez"],
-  "Dermatología":["Profesional a incorporar"],
-  "Ginecología":["Profesional a incorporar"],
-  "Traumatología":["Profesional a incorporar"]
-};
-const SPECIALTY_BY_DOCTOR={
-  "Dra. Ana López":"Cardiología",
-  "Dr. Martín Pérez":"Clínica Médica",
-  "Dra. Sofía Gómez":"Pediatría"
-};
+let DOCTORS_BY_SPECIALTY={};
+let SPECIALTY_BY_DOCTOR={};
+let SPECIALTY_CATALOG=[];
+async function loadPublicCatalog(){
+  try{
+    const data=await apiRequest('/api/specialties');
+    DOCTORS_BY_SPECIALTY={}; SPECIALTY_BY_DOCTOR={}; SPECIALTY_CATALOG=[];
+    (data.specialties||[]).forEach(item=>{
+      SPECIALTY_CATALOG.push(item.name);
+      DOCTORS_BY_SPECIALTY[item.name]=(item.doctors||[]);
+      (item.doctors||[]).forEach(name=>{ if(!SPECIALTY_BY_DOCTOR[name]) SPECIALTY_BY_DOCTOR[name]=item.name; });
+    });
+    const chosen=specialtySelect.value;
+    specialtySelect.replaceChildren(new Option('Seleccionar especialidad',''),...SPECIALTY_CATALOG.map(n=>new Option(n,n)));
+    if(chosen && SPECIALTY_CATALOG.includes(chosen)) specialtySelect.value=chosen;
+    populateDoctorOptions();
+  }catch(e){ note.textContent='No se pudo cargar el catálogo de profesionales: '+e.message; }
+}
 let availabilityRequestId=0;
 let loadedAvailabilityKey="";
+let verifiedDni="";
 
 function populateDoctorOptions(preferred=""){
   const specialty=specialtySelect.value;
@@ -56,17 +62,51 @@ function populateDoctorOptions(preferred=""){
   if(preferred && available.includes(preferred)) doctorSelect.value=preferred;
   else doctorSelect.value="";
 }
-function showBooking({specialty="",doctor=""}={}) {
-  // Cada apertura comienza con una selección coherente; no reutilizar valores de una reserva anterior.
-  specialtySelect.value=specialty || SPECIALTY_BY_DOCTOR[doctor] || "";
-  populateDoctorOptions(doctor);
-  timeSelect.innerHTML="";
-  timeSelect.add(new Option("Elegí especialidad y fecha",""));
-  loadedAvailabilityKey="";
-  result.hidden=true;
-  bookingDialog.showModal();
-  refreshSlots();
+function resetPatientLookup(){
+  verifiedDni="";
+  ['firstNames','lastNames','phone','email'].forEach(id=>{const el=$('#'+id);el.value='';el.disabled=true;});
+  specialtySelect.disabled=true; doctorSelect.disabled=true; dateInput.disabled=true; timeSelect.disabled=true; $('#consent').disabled=true;
+  $('#bookingForm button[type="submit"]').disabled=true;
+  $('#dniMessage').textContent='Primero verificá tu DNI para continuar.';
+  $('#dniMessage').className='availability-note';
+  $('#verifyDni').disabled=false; $('#verifyDni').textContent='Verificar DNI';
 }
+function showBooking({specialty='',doctor=''}={}) {
+  specialtySelect.value=specialty || SPECIALTY_BY_DOCTOR[doctor] || '';
+  populateDoctorOptions(doctor);
+  timeSelect.replaceChildren(new Option('Verificá tu DNI primero',''));
+  loadedAvailabilityKey=''; result.hidden=true;
+  $('#dni').value=''; resetPatientLookup();
+  bookingDialog.showModal();
+}
+function enableBookingFields(){
+  ['firstNames','lastNames','phone','email','specialtySelect','doctorSelect','appointmentDate','timeSelect','consent'].forEach(id=>$('#'+id).disabled=false);
+  $('#bookingForm button[type="submit"]').disabled=false;
+}
+async function verifyPatientDni(){
+  const dni=$('#dni').value.trim();
+  const message=$('#dniMessage');
+  if(!/^[0-9]{7,9}$/.test(dni)){message.textContent='Ingresá un DNI de 7 a 9 números, sin puntos.';message.className='availability-note error';$('#dni').focus();return;}
+  const button=$('#verifyDni');button.disabled=true;button.textContent='Verificando…';message.textContent='Consultando el registro de pacientes…';
+  try{
+    const data=await apiRequest('/api/patients/lookup?dni='+encodeURIComponent(dni));
+    enableBookingFields();
+    verifiedDni=dni;
+    if(data.found){
+      const p=data.patient;
+      $('#firstNames').value=p.first_names||'';$('#lastNames').value=p.last_names||'';$('#phone').value=p.phone||'';$('#email').value=p.email||'';
+      message.textContent='Paciente encontrado. Revisá y confirmá tus datos.';message.className='availability-note success';
+    }else{
+      ['firstNames','lastNames','phone','email'].forEach(id=>$('#'+id).value='');
+      message.textContent='No encontramos este DNI. Completá tus datos para registrar el paciente.';message.className='availability-note';
+    }
+    button.textContent='DNI verificado';
+    await refreshSlots();
+  }catch(e){message.textContent=e.message;message.className='availability-note error';button.disabled=false;button.textContent='Verificar DNI';}
+}
+$('#verifyDni').addEventListener('click',verifyPatientDni);
+$('#dni').addEventListener('input',()=>{if(verifiedDni && $('#dni').value.trim()!==verifiedDni){resetPatientLookup();$('#verifyDni').disabled=false;$('#verifyDni').textContent='Verificar DNI';$('#dniMessage').textContent='Cambiaste el DNI. Volvé a verificarlo para continuar.';}});
+$('#dni').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyPatientDni();}});
 $$("[data-open-booking]").forEach(b=>b.addEventListener("click",()=>showBooking()));
 $$("[data-specialty]").forEach(b=>b.addEventListener("click",()=>showBooking({specialty:b.dataset.specialty})));
 $$("[data-doctor]").forEach(b=>b.addEventListener("click",()=>showBooking({doctor:b.dataset.doctor,specialty:SPECIALTY_BY_DOCTOR[b.dataset.doctor]||""})));
@@ -75,6 +115,7 @@ $$("[data-close]").forEach(b=>b.addEventListener("click",()=>$("#"+b.dataset.clo
 $("#navToggle").addEventListener("click",()=>{const nav=$("#mainNav");nav.classList.toggle("open");$("#navToggle").setAttribute("aria-expanded",nav.classList.contains("open")?"true":"false")});
 $$("#mainNav a").forEach(a=>a.addEventListener("click",()=>$("#mainNav").classList.remove("open")));
  dateInput.addEventListener("change",refreshSlots);
+loadPublicCatalog();
 specialtySelect.addEventListener("change",()=>{
   populateDoctorOptions();
   refreshSlots();
@@ -83,7 +124,8 @@ doctorSelect.addEventListener("change",()=>{
   const doctor=doctorSelect.value;
   const doctorSpecialty=SPECIALTY_BY_DOCTOR[doctor];
   // Si se elige explícitamente un profesional, acompañar esa elección con su especialidad.
-  if(doctorSpecialty && specialtySelect.value!==doctorSpecialty){
+  const currentSpecialtyDoctors=DOCTORS_BY_SPECIALTY[specialtySelect.value]||[];
+  if(doctor && !currentSpecialtyDoctors.includes(doctor) && doctorSpecialty){
     specialtySelect.value=doctorSpecialty;
     populateDoctorOptions(doctor);
   }
@@ -149,7 +191,9 @@ async function refreshSlots(){
 }
 $("#bookingForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  if(!$("#consent").checked) return;
+  if(verifiedDni!==$('#dni').value.trim()){ $('#dniMessage').textContent='Verificá nuevamente el DNI antes de solicitar el turno.'; $('#dniMessage').className='availability-note error'; return; }
+  if(!$("#consent").checked) { note.textContent='Debés aceptar el tratamiento de datos para continuar.'; return; }
+  if(!$('#bookingForm').reportValidity()) return;
   const chosen=timeSelect.value;
   const specialty=specialtySelect.value;
   const doctor=getChosenDoctor();
@@ -172,19 +216,14 @@ $("#bookingForm").addEventListener("submit",async e=>{
       phone:$("#phone").value.trim(),
       specialty,doctor,date:dateInput.value,time:chosen,consent:$("#consent").checked
     })});
-    result.textContent="";
-    const strong=document.createElement('strong');
-    strong.textContent=data.demo?'Turno de demostración registrado.':'¡Tu turno está registrado!';
-    result.appendChild(strong);
-    const detail=document.createElement('p');
-    detail.textContent=`${data.appointment.doctor} · ${data.appointment.specialty} · ${data.appointment.date} a las ${data.appointment.time}.`;
-    result.appendChild(detail);
-    const email=document.createElement('p');
-    email.textContent=data.email_sent?'Enviamos la confirmación a tu correo.':'El turno quedó guardado, pero el correo no se envió. La clínica debe configurar el servicio de correo.';
-    result.appendChild(email);
-    if(data.demo){
-      const demo=document.createElement('p'); demo.textContent='Esta es una agenda de prueba. No uses datos reales de pacientes.'; result.appendChild(demo);
-    }
+    bookingDialog.close();
+    const details=$('#confirmationDetails'); details.replaceChildren();
+    const lead=document.createElement('p'); lead.className='confirmation-lead'; lead.textContent=data.demo?'Turno de demostración registrado correctamente.':'Tu turno quedó registrado correctamente.'; details.appendChild(lead);
+    const rows=[['Paciente',`${data.patient.first_names} ${data.patient.last_names}`],['DNI',data.patient.dni],['Especialidad',data.appointment.specialty],['Profesional',data.appointment.doctor],['Fecha',data.appointment.date],['Horario',data.appointment.time]];
+    rows.forEach(([label,value])=>{const row=document.createElement('p');const b=document.createElement('strong');b.textContent=label+': ';row.append(b,document.createTextNode(value||'—'));details.appendChild(row);});
+    const emailInfo=document.createElement('p');emailInfo.textContent=data.email_sent?'La confirmación fue enviada al correo registrado. Los recordatorios se enviarán antes del turno si el servicio continúa habilitado.':'El turno quedó guardado, pero el correo no se envió. La clínica debe configurar y probar el servicio de correo para confirmaciones y recordatorios.';details.appendChild(emailInfo);
+    if(data.demo){const demo=document.createElement('p');demo.className='privacy-note';demo.textContent='Agenda de demostración: usá únicamente datos ficticios.';details.appendChild(demo);}
+    $('#confirmationDialog').showModal();
     await refreshSlots();
   }catch(error){
     result.textContent=error.message;
@@ -194,6 +233,8 @@ $("#bookingForm").addEventListener("submit",async e=>{
   }
   result.scrollIntoView({block:"nearest",behavior:"smooth"});
 });
+$('#confirmationClose').addEventListener('click',()=>$('#confirmationDialog').close());
+$('#confirmationDialog').addEventListener('close',()=>{ $('#bookingForm').reset(); resetPatientLookup(); });
 $("#portalForm").addEventListener("submit",e=>{
   e.preventDefault();
   const r=$("#portalResult");

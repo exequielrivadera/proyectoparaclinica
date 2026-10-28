@@ -137,3 +137,6 @@ nav a[data-view-link]{cursor:pointer}
 .chat-input-row[hidden]{display:none!important}
 
 .chat-reset-home[hidden],.chat-input-row[hidden]{display:none!important}
+
+/* Mejoras de reserva: identificación por DNI y confirmación clara sin alterar el diseño general. */
+.lookup-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.lookup-row .availability-note{flex:1;min-width:220px}.availability-note.error{color:#b42318}.availability-note.success{color:#147d48}.form-grid input:disabled,.form-grid select:disabled{opacity:.58;cursor:not-allowed}.confirmation-details{line-height:1.55}.confirmation-details p{margin:.55rem 0}.confirmation-details .confirmation-lead{font-size:1.05rem;font-weight:700}.confirmation-details .privacy-note{margin-top:1rem}

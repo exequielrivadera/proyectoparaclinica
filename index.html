@@ -127,29 +127,33 @@
   </div>
 
   <dialog id="bookingDialog" class="modal">
-    <form id="bookingForm" method="dialog">
+    <form id="bookingForm" method="dialog" novalidate>
       <div class="modal-heading"><div><span class="eyebrow">RESERVA ONLINE</span><h2>Solicitá tu turno</h2></div><button type="button" class="close-modal" data-close="bookingDialog" aria-label="Cerrar">×</button></div>
-      <div class="steps"><span class="step active">1. Especialidad y horario</span><span class="step">2. Tus datos</span></div>
+      <div class="steps"><span class="step active">1. Identificación</span><span class="step">2. Turno</span></div>
       <div class="form-grid">
-        <label class="full">Especialidad<select id="specialtySelect" required><option value="">Seleccionar especialidad</option><option>Clínica Médica</option><option>Cardiología</option><option>Pediatría</option><option>Dermatología</option><option>Ginecología</option><option>Traumatología</option></select></label>
-        <label class="full">Profesional<select id="doctorSelect"><option value="">Cualquier profesional</option><option>Dra. Ana López</option><option>Dr. Martín Pérez</option><option>Dra. Sofía Gómez</option></select></label>
-        <label>Fecha disponible<input type="date" id="appointmentDate" required></label>
-        <label>Horario disponible<select id="timeSelect" required><option value="">Elegí primero la fecha</option></select></label>
-        <p class="availability-note full" id="availabilityNote">Seleccioná especialidad y fecha para consultar los horarios de demostración.</p>
+        <label class="full">DNI del paciente<input id="dni" inputmode="numeric" autocomplete="off" pattern="[0-9]{7,9}" maxlength="9" required placeholder="Ingresá tu DNI sin puntos"></label>
+        <div class="full lookup-row"><button type="button" class="btn btn-outline" id="verifyDni">Verificar DNI</button><span id="dniMessage" class="availability-note" role="status">Primero verificá tu DNI para continuar.</span></div>
+        <label>Nombres<input id="firstNames" autocomplete="given-name" required maxlength="100" placeholder="Tus nombres" disabled></label>
+        <label>Apellidos<input id="lastNames" autocomplete="family-name" required maxlength="100" placeholder="Tus apellidos" disabled></label>
+        <label>Celular<input id="phone" type="tel" autocomplete="tel" inputmode="tel" pattern="\+?[0-9][0-9 ()-]{5,24}" required placeholder="Código de área y número" disabled></label>
+        <label>Email<input id="email" type="email" autocomplete="email" required maxlength="254" placeholder="nombre@correo.com" disabled></label>
+        <label class="full">Especialidad<select id="specialtySelect" required disabled><option value="">Seleccionar especialidad</option></select></label>
+        <label class="full">Profesional<select id="doctorSelect" required disabled><option value="">Seleccioná especialidad primero</option></select></label>
+        <label>Fecha disponible<input type="date" id="appointmentDate" required disabled></label>
+        <label>Horario disponible<select id="timeSelect" required disabled><option value="">Elegí primero la especialidad y fecha</option></select></label>
+        <p class="availability-note full" id="availabilityNote">Verificá tu DNI para consultar la agenda.</p>
         <div class="full" id="demandNote" hidden></div>
-        <div class="full form-separator"><span>Datos del paciente</span></div>
-        <label>Nombres<input id="firstNames" autocomplete="given-name" required maxlength="100" placeholder="Tus nombres"></label>
-        <label>Apellidos<input id="lastNames" autocomplete="family-name" required maxlength="100" placeholder="Tus apellidos"></label>
-        <label>DNI<input id="dni" inputmode="numeric" pattern="[0-9]{7,9}" required placeholder="Solo números"></label>
-        <label>Sexo<select id="sex" required><option value="">Seleccionar</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicarlo</option></select></label>
-        <label>Celular<input id="phone" type="tel" autocomplete="tel" required placeholder="Código de área y número"></label>
-        <label>Email<input id="email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></label>
-        <label class="full check-label"><input type="checkbox" id="consent" required> Confirmo que los datos son correctos y acepto el tratamiento de datos necesario para gestionar el turno.</label>
+        <label class="full check-label"><input type="checkbox" id="consent" required disabled> Confirmo que los datos son correctos y acepto el tratamiento de datos necesario para gestionar el turno.</label>
       </div>
-      <div class="privacy-note"><strong>Tu privacidad importa.</strong> Esta agenda puede funcionar en modo demostración. No ingreses datos reales hasta que la clínica habilite y asegure el servicio.</div>
-      <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="bookingDialog">Cancelar</button><button type="submit" class="btn">Solicitar turno</button></div>
+      <div class="privacy-note"><strong>Tu privacidad importa.</strong> Esta agenda funciona en modo demostración. No ingreses datos reales hasta que la clínica habilite y asegure el servicio.</div>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="bookingDialog">Cancelar</button><button type="submit" class="btn" disabled>Solicitar turno</button></div>
       <div id="bookingResult" class="result-message" role="status" hidden></div>
     </form>
+  </dialog>
+  <dialog id="confirmationDialog" class="modal">
+    <div class="modal-heading"><div><span class="eyebrow">RESERVA ONLINE</span><h2>¡Turno reservado!</h2></div><button type="button" class="close-modal" data-close="confirmationDialog" aria-label="Cerrar">×</button></div>
+    <div id="confirmationDetails" class="confirmation-details"></div>
+    <div class="modal-actions"><button type="button" class="btn" id="confirmationClose">Aceptar</button></div>
   </dialog>
 
   <dialog id="portalDialog" class="modal portal-modal">

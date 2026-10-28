@@ -70,3 +70,14 @@ Usá exclusivamente datos ficticios incluidos en la demo, por ejemplo DNI `30123
 ## Seguridad y límites
 
 Esta versión es exclusivamente para presentación. Los paneles y el acceso de pacientes **no tienen autenticación real ni permisos de producción**; los datos y estudios de demo pueden quedar expuestos públicamente. Antes de usarla con una clínica real hay que implementar autenticación por roles, autorización en cada endpoint, verificación de identidad, almacenamiento privado de estudios, auditoría, límites de solicitudes, copias de seguridad, recuperación y una base de datos administrada. No usar con información médica real.
+
+## Mejoras recientes: pacientes, profesionales y llamados
+
+- Cada paciente tiene un `id` entero autoincremental e independiente del DNI. Los turnos guardan referencias a `patient_id` y `doctor_id`.
+- La solicitud de turno empieza verificando el DNI; si el paciente existe, recupera sus datos. Si no existe, registra el paciente al confirmar el turno.
+- Se valida el formato de nombres, teléfono, DNI, correo, fecha y horario tanto en el frontend como en el backend.
+- La confirmación del turno se muestra en una ventana aparte. El envío de correo y recordatorios depende de la configuración SMTP del backend.
+- Administración permite dar de alta, editar, activar y desactivar médicos, con ID autoincremental y una o varias especialidades por médico.
+- Al marcar un consultorio como libre, el backend finaliza la atención previa y llama automáticamente al siguiente paciente que Administración haya marcado como llegado.
+
+**Importante:** sigue siendo una demo. No usar con pacientes reales ni datos médicos reales. Antes de producción hacen falta autenticación y permisos por rol, verificación de identidad para consultar datos, auditoría, pruebas de seguridad y una base de datos persistente administrada (por ejemplo PostgreSQL); el SQLite de una instancia gratuita no debe considerarse almacenamiento permanente.
