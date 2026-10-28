@@ -1,0 +1,1 @@
+Se restauró la alineación del panel médico: Consultorio libre, Estoy atendiendo y Actualizar agenda se ubican en la misma fila junto a los selectores en escritorio y se adaptan en pantallas pequeñas. No se modificó la URL de API ni la lógica del backend.
