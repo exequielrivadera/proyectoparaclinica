@@ -1,4 +1,4 @@
-﻿const CACHE = "clinica-demo-v16-fix-reserva-pacientes-medicos";
+const CACHE = "clinica-demo-v16-sobreturno-patient-id";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -51,4 +51,3 @@ self.addEventListener("fetch", (event) => {
       })
   );
 });
-

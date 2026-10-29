@@ -491,12 +491,12 @@ def admin_create_patient():
 
 @app.post("/api/admin/overbooking")
 def admin_create_overbooking():
-    """Registra un paciente presencial y lo incorpora a la cola del médico como sobreturno."""
+    """Registra el paciente por DNI y crea un sobreturno vinculado a su ID permanente."""
     d = request.get_json(silent=True) or {}
     first = str(d.get("first_names", "")).strip()
     last = str(d.get("last_names", "")).strip()
     dni = re.sub(r"\D", "", str(d.get("dni", "")))
-    email = str(d.get("email", "")).strip()
+    email = str(d.get("email", "")).strip().lower()
     phone = str(d.get("phone", "")).strip()
     doctor = str(d.get("doctor", "")).strip()
 
@@ -504,38 +504,54 @@ def admin_create_overbooking():
     known = {doc["full_name"] for docs in catalog.values() for doc in docs}
     if not first or not last or not re.fullmatch(r"\d{7,9}", dni):
         return jsonify(error="Completá nombres, apellidos y un DNI válido."), 400
+    if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        return jsonify(error="El correo electrónico no tiene un formato válido."), 400
     if doctor not in known:
         return jsonify(error="Seleccioná un médico válido para el sobreturno."), 400
 
-    specialty = next((specialty for specialty, docs in catalog.items() if any(doc["full_name"] == doctor for doc in docs)), "Atención presencial")
+    specialty = next((specialty for specialty, docs in catalog.items()
+                      if any(doc["full_name"] == doctor for doc in docs)), "Atención presencial")
     doctor_id = doctor_name_to_id(doctor)
-    # Los sobreturnos no ocupan un turno reservado: se registran con la hora de llegada,
-    # estado 'arrived' y microsegundos para permitir varios ingresos seguidos al mismo médico.
     arrived_at = now_local().isoformat(timespec="microseconds")
+    patient_created = False
+
+    # El registro de paciente y el sobreturno se guardan juntos. El ID del paciente
+    # solo se genera si el DNI no existía; los pacientes existentes conservan su ID.
     with connect() as con:
-        existing = con.execute("SELECT id FROM patients WHERE dni=?", (dni,)).fetchone()
-        if existing:
+        patient = con.execute("SELECT id,email,phone FROM patients WHERE dni=?", (dni,)).fetchone()
+        if patient:
+            patient_id = patient["id"]
             con.execute("""UPDATE patients SET first_names=?, last_names=?,
                 email=CASE WHEN ? <> '' THEN ? ELSE email END,
                 phone=CASE WHEN ? <> '' THEN ? ELSE phone END
-                WHERE dni=?""", (first, last, email, email, phone, phone, dni))
+                WHERE id=?""", (first, last, email, email, phone, phone, patient_id))
+            saved = con.execute("SELECT email,phone FROM patients WHERE id=?", (patient_id,)).fetchone()
+            saved_email = saved["email"]
+            saved_phone = saved["phone"]
         else:
-            con.execute("INSERT INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
-                        (dni, first, last, email, phone, arrived_at))
+            cur_patient = con.execute(
+                "INSERT INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
+                (dni, first, last, email, phone, arrived_at))
+            patient_id = cur_patient.lastrowid
+            patient_created = True
+            saved_email, saved_phone = email, phone
+
         try:
-            patient_row=con.execute("SELECT id FROM patients WHERE dni=?",(dni,)).fetchone()
             cur = con.execute("""INSERT INTO appointments
-                (first_names,last_names,dni,email,phone,specialty,doctor,starts_at,status,appointment_type,created_at,patient_id,doctor_id)
+                (first_names,last_names,dni,email,phone,specialty,doctor,starts_at,status,
+                 appointment_type,created_at,patient_id,doctor_id)
                 VALUES(?,?,?,?,?,?,?,?, 'arrived','sobreturno',?,?,?)""",
-                (first, last, dni, email, phone, specialty, doctor, arrived_at, arrived_at, patient_row["id"], doctor_id))
+                (first, last, dni, saved_email, saved_phone, specialty, doctor,
+                 arrived_at, arrived_at, patient_id, doctor_id))
         except sqlite3.IntegrityError:
             return jsonify(error="No se pudo registrar el sobreturno. Actualizá la agenda e intentá nuevamente."), 409
         appointment_id = cur.lastrowid
 
-    with connect() as con: patient_row=con.execute("SELECT id FROM patients WHERE dni=?",(dni,)).fetchone()
-    return jsonify(ok=True, id=appointment_id, patient_id=patient_row["id"], doctor=doctor, specialty=specialty,
-                   appointment_type="sobreturno", status="arrived",
-                   message=f"Paciente registrado como sobreturno y agregado a la lista de {doctor}. Ya figura como llegado y puede llamarse desde Administración."), 201
+    patient_message = "Se creó el registro del paciente" if patient_created else "Se reutilizó el registro existente del paciente"
+    return jsonify(ok=True, id=appointment_id, patient_id=patient_id,
+                   patient_created=patient_created, doctor_id=doctor_id, doctor=doctor,
+                   specialty=specialty, appointment_type="sobreturno", status="arrived",
+                   message=f"Sobreturno registrado. {patient_message}: ID de paciente {patient_id}. Ya figura como llegado y puede llamarse desde Administración."), 201
 
 
 @app.post("/api/admin/appointments/<int:aid>/status")
