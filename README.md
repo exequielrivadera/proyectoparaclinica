@@ -1,6 +1,6 @@
-# Clínica Demo — Sindicato de Camioneros de La Rioja
+# Clínica — Sindicato de Camioneros de La Rioja
 
-Demo institucional con web pública, solicitud de turnos, portal de pacientes ficticios, panel de Administración, panel Médico y pantalla de llamados. El backend Flask comparte una base SQLite para que las acciones se reflejen entre los paneles.
+PRUEBA institucional con web pública, solicitud de turnos, portal de pacientes ficticios, panel de Administración, panel Médico y pantalla de llamados. El backend Flask comparte una base SQLite para que las acciones se reflejen entre los paneles.
 
 ## Para probar todo localmente en Windows
 
@@ -20,9 +20,9 @@ Demo institucional con web pública, solicitud de turnos, portal de pacientes fi
 
 No abras `index.html` con doble clic ni uses Live Server para probar funciones dinámicas: la página y la API deben servirse desde Flask en el mismo puerto.
 
-## Para que la demo funcione online en GitHub Pages
+## Para que la PRUEBA funcione online en GitHub Pages
 
-GitHub Pages no ejecuta Python. Hay que desplegar el backend Flask por separado y conectar la web a su URL HTTPS. El archivo `render.yaml` prepara un servicio de demo en Render.
+GitHub Pages no ejecuta Python. Hay que desplegar el backend Flask por separado y conectar la web a su URL HTTPS. El archivo `render.yaml` prepara un servicio de PRUEBA en Render.
 
 ### Paso A — Publicar el backend
 
@@ -44,7 +44,7 @@ El plan gratuito puede suspenderse por inactividad y el almacenamiento local pue
 3. Guardá y subí el cambio a GitHub:
    ```powershell
    git add js/config.js render.yaml README.md js/app.js js/panels.js service-worker.js
-   git commit -m "Conecta la demo con el backend desplegado"
+   git commit -m "Conecta la PRUEBA con el backend desplegado"
    git push origin main
    ```
 4. Esperá a que GitHub Pages publique el commit. Abrí la web y hacé `Ctrl + F5`.
@@ -52,24 +52,24 @@ El plan gratuito puede suspenderse por inactividad y el almacenamiento local pue
 
 También podés presentar directamente la URL de Render: el backend sirve la página principal y los recursos estáticos en el mismo dominio, así que no requiere configurar una segunda URL de API. GitHub Pages seguirá disponible como frontend estático cuando completes el Paso B.
 
-## Qué incluye la demo
+## Qué incluye la PRUEBA
 
 - Solicitud de turnos y disponibilidad consultadas en el backend.
 - Panel de administración para agenda, pacientes, estados y llamados.
 - Panel médico para disponibilidad del consultorio, notas y estudios ficticios.
-- Portal de paciente con registros de demostración.
+- Portal de paciente con registros de pruebastración.
 - Pantalla de llamados para recepción/sala de espera.
 - Envío de confirmaciones y recordatorios por correo, si se configuran credenciales SMTP en `backend/.env` o variables de entorno del servicio.
 
-Los recordatorios por correo no se envían hasta que SMTP esté configurado. El servicio gratuito puede dormir cuando no se utiliza, por lo que el primer acceso puede demorar.
+Los recordatorios por correo no se envían hasta que SMTP esté configurado. El servicio gratuito puede dormir cuando no se utiliza, por lo que el primer acceso puede pruebarar.
 
-## Datos de demostración
+## Datos de pruebastración
 
-Usá exclusivamente datos ficticios incluidos en la demo, por ejemplo DNI `30123456` o `28987654`. No ingreses datos reales de pacientes ni subas estudios reales.
+Usá exclusivamente datos ficticios incluidos en la PRUEBA, por ejemplo DNI `30123456` o `28987654`. No ingreses datos reales de pacientes ni subas estudios reales.
 
 ## Seguridad y límites
 
-Esta versión es exclusivamente para presentación. Los paneles y el acceso de pacientes **no tienen autenticación real ni permisos de producción**; los datos y estudios de demo pueden quedar expuestos públicamente. Antes de usarla con una clínica real hay que implementar autenticación por roles, autorización en cada endpoint, verificación de identidad, almacenamiento privado de estudios, auditoría, límites de solicitudes, copias de seguridad, recuperación y una base de datos administrada. No usar con información médica real.
+Esta versión es exclusivamente para presentación. Los paneles y el acceso de pacientes **no tienen autenticación real ni permisos de producción**; los datos y estudios de PRUEBA pueden quedar expuestos públicamente. Antes de usarla con una clínica real hay que implementar autenticación por roles, autorización en cada endpoint, verificación de identidad, almacenamiento privado de estudios, auditoría, límites de solicitudes, copias de seguridad, recuperación y una base de datos administrada. No usar con información médica real.
 
 ## Mejoras recientes: pacientes, profesionales y llamados
 
@@ -80,12 +80,12 @@ Esta versión es exclusivamente para presentación. Los paneles y el acceso de p
 - Administración permite dar de alta, editar, activar y desactivar médicos, con ID autoincremental y una o varias especialidades por médico.
 - Al marcar un consultorio como libre, el backend finaliza la atención previa y llama automáticamente al siguiente paciente que Administración haya marcado como llegado.
 
-**Importante:** sigue siendo una demo. No usar con pacientes reales ni datos médicos reales. Antes de producción hacen falta autenticación y permisos por rol, verificación de identidad para consultar datos, auditoría, pruebas de seguridad y una base de datos persistente administrada (por ejemplo PostgreSQL); el SQLite de una instancia gratuita no debe considerarse almacenamiento permanente.
+**Importante:** sigue siendo una PRUEBA. No usar con pacientes reales ni datos médicos reales. Antes de producción hacen falta autenticación y permisos por rol, verificación de identidad para consultar datos, auditoría, pruebas de seguridad y una base de datos persistente administrada (por ejemplo PostgreSQL); el SQLite de una instancia gratuita no debe considerarse almacenamiento permanente.
 
-## Ajustes demo: atención, estudios y portal
+## Ajustes PRUEBA: atención, estudios y portal
 
 - Al pulsar **Consultorio libre**, el backend marca como `attended` al turno llamado/en atención y luego llama al siguiente paciente que Administración haya marcado como `arrived` para ese médico y día.
 - La pantalla de llamados muestra el nombre completo y consultorio; para los sobreturnos también anuncia por voz que se trata de un sobreturno.
 - El panel médico admite adjuntar un PDF, PNG o JPG de hasta 12 MB. Los archivos se guardan en `backend/private_studies/`, fuera de los recursos públicos, y no deben incluirse en Git.
-- Portal de paciente de demostración: DNI ficticio y contraseña `demo1234` (se puede cambiar mediante `DEMO_PORTAL_PASSWORD`). La sesión de descarga vence a los 30 minutos.
-- **No utilizar datos reales ni desplegar el portal como sistema clínico de producción.** El login de demo usa una contraseña compartida y debe sustituirse por autenticación individual robusta, autorización, auditoría y almacenamiento privado persistente antes de producción.
+- Portal de paciente de pruebastración: DNI ficticio y contraseña `prueba1234` (se puede cambiar mediante `prueba_PORTAL_PASSWORD`). La sesión de descarga vence a los 30 minutos.
+- **No utilizar datos reales ni desplegar el portal como sistema clínico de producción.** El login de PRUEBA usa una contraseña compartida y debe sustituirse por autenticación individual robusta, autorización, auditoría y almacenamiento privado persistente antes de producción.

@@ -13,9 +13,9 @@ Usar PostgreSQL administrado y un backend central alojado en un servicio cloud p
 
 ## Archivos incluidos
 - `schema_postgresql.sql`: diseño inicial de tablas para clínicas, usuarios, pacientes, profesionales, agenda, turnos, historias clínicas, estudios, notificaciones y auditoría.
-- `app.py`: backend demo previo para seguir probando la agenda actual. **Todavía utiliza SQLite y no está conectado a este esquema PostgreSQL.**
-- `.env.example`: variables de configuración de la demo.
-- `README.md`: guía para correr la demo y preparar la migración.
+- `app.py`: backend PRUEBA previo para seguir probando la agenda actual. **Todavía utiliza SQLite y no está conectado a este esquema PostgreSQL.**
+- `.env.example`: variables de configuración de la PRUEBA.
+- `README.md`: guía para correr la PRUEBA y preparar la migración.
 
 ## Migración recomendada
 1. Revisar el modelo con los flujos reales de la clínica y asesoría legal/de privacidad.

@@ -7,7 +7,7 @@ services:
     startCommand: gunicorn app:app --workers 1 --bind 0.0.0.0:$PORT
     plan: free
     envVars:
-      - key: DEMO_MODE
+      - key: prueba_MODE
         value: "true"
       - key: TIMEZONE
         value: America/Argentina/Buenos_Aires

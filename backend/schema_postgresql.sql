@@ -1,4 +1,4 @@
--- PostgreSQL schema proposal for Clínica Demo / multi-tenant SaaS.
+-- PostgreSQL schema proposal for Clínica / multi-tenant SaaS.
 -- Review and apply through versioned migrations, not manually in production.
 -- Tenant isolation: all clinic-owned tables carry clinic_id; use RLS plus backend authorization.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

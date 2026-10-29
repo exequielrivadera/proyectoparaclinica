@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#176b5b">
-  <meta name="description" content="Clínica Demo: especialidades, profesionales y turnos online.">
+  <meta name="description" content="Clínica: especialidades, profesionales y turnos online.">
   <title>Clínica | Atención y turnos online</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="#inicio" aria-label="Clínica Demo, inicio">
+    <a class="brand" href="#inicio" aria-label="Clínica, inicio">
       <span class="brand-mark">+</span><span><strong>Clínica</strong><small>· SALUD INTEGRAL</small></span>
     </a>
     <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
@@ -67,7 +67,7 @@
         <article class="doctor"><div class="doctor-avatar avatar-b">MP</div><div class="doctor-info"><span class="doctor-specialty">CLÍNICA MÉDICA</span><h3>Dr. Martín Pérez</h3><p>Medicina general y seguimiento clínico.</p><button class="text-link" data-doctor="Dr. Martín Pérez">Consultar turnos</button></div></article>
         <article class="doctor"><div class="doctor-avatar avatar-c">SG</div><div class="doctor-info"><span class="doctor-specialty">PEDIATRÍA</span><h3>Dra. Sofía Gómez</h3><p>Atención pediátrica y acompañamiento familiar.</p><button class="text-link" data-doctor="Dra. Sofía Gómez">Consultar turnos</button></div></article>
       </div>
-      <p class="demo-note">Los nombres y perfiles son ficticios.</p>
+      <p class="PRUEBA-note">Los perfiles profesionales se actualizarán con la información oficial de la clínica.</p>
     </section>
 
     <section class="booking-banner">
@@ -88,7 +88,7 @@
   </main>
 
   <footer class="site-footer">
-    <div class="footer-main"><a class="brand footer-brand" href="#inicio"><span class="brand-mark">+</span><span><strong>Clínica</strong><small>· SALUD INTEGRAL</small></span></a><p>Información de demostración.</p><div class="footer-links"><a href="#especialidades" data-view-link="especialidades">Especialidades</a><a href="#profesionales" data-view-link="profesionales">Profesionales</a><a href="#contacto">Contacto</a></div></div>
+    <div class="footer-main"><a class="brand footer-brand" href="#inicio"><span class="brand-mark">+</span><span><strong>Clínica</strong><small>· SALUD INTEGRAL</small></span></a><p>Información de pruebastración.</p><div class="footer-links"><a href="#especialidades" data-view-link="especialidades">Especialidades</a><a href="#profesionales" data-view-link="profesionales">Profesionales</a><a href="#contacto">Contacto</a></div></div>
     <div class="footer-bottom"><span>© <span id="year"></span> Clínica. Todos los derechos reservados.</span><div class="credit"><span>Diseñada por</span><img src="assets/pulsodigital-logo.png" alt="Logo de Pulso Digital"></div></div>
   </footer>
 
@@ -106,7 +106,7 @@
       <div class="chat-head"><span class="chat-logo">+</span><span><strong>¿Te asesoramos?</strong><small>Clínica · Secretaría</small></span><button id="closeWhatsapp" aria-label="Cerrar chat">×</button></div>
       <div class="chat-body">
         <div class="chat-messages" id="chatMessages" aria-live="polite">
-          <div class="chat-bubble bot-message">¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué podemos ayudarte?</div>
+          <div class="chat-bubble bot-message">¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué popruebas ayudarte?</div>
         </div>
         <button type="button" class="chat-reset-home" id="chatResetHome" hidden>← Volver al inicio</button>
         <div class="chat-quick-title" id="chatQuickTitle">Elegí una opción:</div>
@@ -121,7 +121,7 @@
           <input id="chatInput" maxlength="120" autocomplete="off" placeholder="Escribí tu respuesta..." aria-label="Escribí tu respuesta">
           <button class="btn chat-send" type="submit" aria-label="Enviar mensaje">Enviar</button>
         </form>
-        <p class="chat-disclaimer" id="whatsappStatus">Asistente demostrativo: la agenda y los datos de ejemplo no son reales.</p>
+        <p class="chat-disclaimer" id="whatsappStatus">Asistente pruebastrativo: la agenda y los datos de ejemplo no son reales.</p>
       </div>
     </div>
   </div>
@@ -145,7 +145,7 @@
         <div class="full" id="demandNote" hidden></div>
         <label class="full check-label"><input type="checkbox" id="consent" required disabled> Confirmo que los datos son correctos y acepto el tratamiento de datos necesario para gestionar el turno.</label>
       </div>
-      <div class="privacy-note"><strong>Tu privacidad importa.</strong> Esta agenda funciona en modo demostración.</div>
+      <div class="privacy-note"><strong>Tu privacidad importa.</strong> Esta agenda funciona en modo pruebastración.</div>
       <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="bookingDialog">Cancelar</button><button type="submit" class="btn" disabled>Solicitar turno</button></div>
       <div id="bookingResult" class="result-message" role="status" hidden></div>
     </form>
@@ -159,11 +159,11 @@
   <dialog id="portalDialog" class="modal portal-modal">
     <form method="dialog" id="portalForm">
       <div class="modal-heading"><div><span class="eyebrow">ÁREA PRIVADA</span><h2>Portal de pacientes</h2></div><button type="button" class="close-modal" data-close="portalDialog" aria-label="Cerrar">×</button></div>
-      <p>Ingresá con el DNI del paciente y la contraseña de demostración.</p>
+      <p>Ingresá con el DNI del paciente y la contraseña de pruebastración.</p>
       <label>DNI / Usuario<input inputmode="numeric" autocomplete="username" required placeholder="Tu DNI"></label>
       <label>Contraseña<input type="password" autocomplete="current-password" required placeholder="Tu contraseña"></label>
       <button type="submit" class="btn full-width">Ingresar al portal</button>
-      <p class="small-muted">Demo solamente: DNI ficticio 30123456 y contraseña demo1234. En producción se implementará autenticación segura.</p>
+      <p class="small-muted">PRUEBA solamente: DNI ficticio 30123456 y contraseña prueba1234. En producción se implementará autenticación segura.</p>
       <div id="portalResult" class="result-message" role="status" hidden></div>
     </form>
   </dialog>

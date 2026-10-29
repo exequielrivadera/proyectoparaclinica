@@ -175,11 +175,11 @@ async function refreshSlots(){
     timeSelect.add(new Option("Seleccionar horario",""));
     data.slots.forEach(t=>timeSelect.add(new Option(t,t)));
     loadedAvailabilityKey=requestKey;
-    note.textContent=`${data.slots.length} horarios ${data.demo?'de demostración':'disponibles'} para ${specialty}.`;
+    note.textContent=`${data.slots.length} horarios ${data.PRUEBA?'de pruebastración':'disponibles'} para ${specialty}.`;
     if(data.slots.length<=3){
       demandNote.hidden=false; demandNote.className="demand-alert";
-      demandNote.textContent=data.demo
-        ?"Quedan pocos horarios en esta agenda de demostración."
+      demandNote.textContent=data.PRUEBA
+        ?"Quedan pocos horarios en esta agenda de pruebastración."
         :"Quedan pocos horarios disponibles para esta fecha.";
     }
   }catch(error){
@@ -217,11 +217,11 @@ $("#bookingForm").addEventListener("submit",async e=>{
     })});
     bookingDialog.close();
     const details=$('#confirmationDetails'); details.replaceChildren();
-    const lead=document.createElement('p'); lead.className='confirmation-lead'; lead.textContent=data.demo?'Turno de demostración registrado correctamente.':'Tu turno quedó registrado correctamente.'; details.appendChild(lead);
+    const lead=document.createElement('p'); lead.className='confirmation-lead'; lead.textContent=data.PRUEBA?'Turno de pruebastración registrado correctamente.':'Tu turno quedó registrado correctamente.'; details.appendChild(lead);
     const rows=[['Paciente',`${data.patient.first_names} ${data.patient.last_names}`],['DNI',data.patient.dni],['Especialidad',data.appointment.specialty],['Profesional',data.appointment.doctor],['Fecha',data.appointment.date],['Horario',data.appointment.time]];
     rows.forEach(([label,value])=>{const row=document.createElement('p');const b=document.createElement('strong');b.textContent=label+': ';row.append(b,document.createTextNode(value||'—'));details.appendChild(row);});
     const emailInfo=document.createElement('p');emailInfo.textContent=data.email_sent?'La confirmación fue enviada al correo registrado. Los recordatorios se enviarán antes del turno si el servicio continúa habilitado.':'El turno quedó guardado, pero el correo no se envió. La clínica debe configurar y probar el servicio de correo para confirmaciones y recordatorios.';details.appendChild(emailInfo);
-    if(data.demo){const demo=document.createElement('p');demo.className='privacy-note';demo.textContent='Agenda de demostración: usá únicamente datos ficticios.';details.appendChild(demo);}
+    if(data.PRUEBA){const PRUEBA=document.createElement('p');PRUEBA.className='privacy-note';PRUEBA.textContent='Agenda de pruebastración: usá únicamente datos ficticios.';details.appendChild(PRUEBA);}
     $('#confirmationDialog').showModal();
     await refreshSlots();
   }catch(error){
@@ -240,11 +240,11 @@ $("#portalForm").addEventListener("submit",async e=>{
   const inputs=e.currentTarget.querySelectorAll('input');
   const dni=inputs[0]?.value.trim()||'';
   const password=inputs[1]?.value||'';
-  r.hidden=false;r.textContent='Ingresando al portal de demostración…';
+  r.hidden=false;r.textContent='Ingresando al portal de pruebastración…';
   try{
     const data=await apiRequest('/api/patient/portal',{method:'POST',body:JSON.stringify({dni,password})});
     const studies=(data.studies||[]).map(st=>`<article class="result-message" style="margin-top:10px"><strong>${escapeHtml(st.title)}</strong><p>${escapeHtml(st.study_type)} · ${escapeHtml(st.professional||'Profesional')}</p><p>Estado: ${escapeHtml(st.status==='delivered'?'Entregado':'Disponible')}</p>${st.file_url?`<a class="btn btn-small" href="${API_BASE}${st.file_url}" target="_blank" rel="noopener">Ver / descargar archivo</a>`:'<span class="small-muted">Este registro no tiene archivo adjunto.</span>'}</article>`).join('');
-    r.innerHTML=`<strong>Hola, ${escapeHtml(data.patient.first_names)} ${escapeHtml(data.patient.last_names)}.</strong><p>Portal de demostración. No ingreses información real.</p>${studies||'<p>No hay estudios publicados para este paciente.</p>'}<p class="small-muted">La sesión de demostración vence en 30 minutos. Para producción se implementará autenticación reforzada.</p>`;
+    r.innerHTML=`<strong>Hola, ${escapeHtml(data.patient.first_names)} ${escapeHtml(data.patient.last_names)}.</strong><p>Portal de pruebastración. No ingreses información real.</p>${studies||'<p>No hay estudios publicados para este paciente.</p>'}<p class="small-muted">La sesión de pruebastración vence en 30 minutos. Para producción se implementará autenticación reforzada.</p>`;
   }catch(error){r.textContent=error.message}
 });
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -259,7 +259,7 @@ const internalView = document.getElementById("internalView");
 const internalViewContent = document.getElementById("internalViewContent");
 const viewTemplates = {
   profesionales: `
-    <div class="internal-hero"><span class="eyebrow">NUESTRO EQUIPO</span><h1>Profesionales para acompañarte.</h1><p>Conocé al equipo por especialidad y elegí con quién querés atenderte. Los perfiles de esta demo son ilustrativos.</p></div>
+    <div class="internal-hero"><span class="eyebrow">NUESTRO EQUIPO</span><h1>Profesionales para acompañarte.</h1><p>Conocé al equipo por especialidad y elegí con quién querés atenderte. Los perfiles de esta PRUEBA son ilustrativos.</p></div>
     <div class="internal-filter" role="group" aria-label="Filtrar profesionales"><button class="filter-chip active" data-prof-filter="Todos">Todos</button><button class="filter-chip" data-prof-filter="Pediatría">Pediatría</button><button class="filter-chip" data-prof-filter="Clínica Médica">Clínica Médica</button><button class="filter-chip" data-prof-filter="Cardiología">Cardiología</button><button class="filter-chip" data-prof-filter="Dermatología">Dermatología</button><button class="filter-chip" data-prof-filter="Ginecología">Ginecología</button><button class="filter-chip" data-prof-filter="Traumatología">Traumatología</button></div>
     <div class="professional-groups">
       <section class="professional-group" data-prof-category="Pediatría"><div class="group-heading"><h2>Pediatría</h2><p>Salud y desarrollo infantil.</p></div><div class="professional-cards"><article class="professional-card"><div class="doctor-avatar avatar-c">SG</div><div><span class="doctor-specialty">PEDIATRÍA</span><h3>Dra. Sofía Gómez</h3><p>Atención pediátrica y acompañamiento familiar.</p><button class="btn btn-small" data-book-doctor="Dra. Sofía Gómez" data-book-specialty="Pediatría">Solicitar turno</button></div></article></div></section>
@@ -268,8 +268,8 @@ const viewTemplates = {
       <section class="professional-group" data-prof-category="Dermatología"><div class="group-heading"><h2>Dermatología</h2><p>Consulta y cuidado integral de la piel.</p></div><div class="professional-cards"><article class="professional-card placeholder-prof"><div class="doctor-avatar avatar-d">DE</div><div><span class="doctor-specialty">DERMATOLOGÍA</span><h3>Profesional a incorporar</h3><p>Espacio preparado para agregar profesionales y sus agendas.</p><button class="btn btn-outline btn-small" data-book-specialty="Dermatología">Consultar turnos</button></div></article></div></section>
       <section class="professional-group" data-prof-category="Ginecología"><div class="group-heading"><h2>Ginecología</h2><p>Salud, prevención y acompañamiento.</p></div><div class="professional-cards"><article class="professional-card placeholder-prof"><div class="doctor-avatar avatar-e">GI</div><div><span class="doctor-specialty">GINECOLOGÍA</span><h3>Profesional a incorporar</h3><p>Espacio preparado para agregar profesionales y sus agendas.</p><button class="btn btn-outline btn-small" data-book-specialty="Ginecología">Consultar turnos</button></div></article></div></section>
       <section class="professional-group" data-prof-category="Traumatología"><div class="group-heading"><h2>Traumatología</h2><p>Huesos, articulaciones y movimiento.</p></div><div class="professional-cards"><article class="professional-card placeholder-prof"><div class="doctor-avatar avatar-f">TR</div><div><span class="doctor-specialty">TRAUMATOLOGÍA</span><h3>Profesional a incorporar</h3><p>Espacio preparado para agregar profesionales y sus agendas.</p><button class="btn btn-outline btn-small" data-book-specialty="Traumatología">Consultar turnos</button></div></article></div></section>
-    </div><p class="demo-note">Los nombres y perfiles son ficticios. Las especialidades sin profesional asignado están preparadas para completar con datos reales.</p>`,
-  clinica: `<div class="internal-hero clinic-history-hero"><span class="eyebrow">NUESTRA HISTORIA</span><h1>Una clínica que crece con su comunidad.</h1><p>Creemos que una buena atención combina conocimiento médico, escucha y organización. Por eso buscamos que cada persona encuentre un espacio de confianza desde el primer contacto.</p></div><div class="history-layout"><div class="history-art"><div class="history-plus">+</div><span>ATENCIÓN<br>CON CALIDEZ</span></div><div class="history-copy"><span class="eyebrow">QUIÉNES SOMOS</span><h2>La salud empieza con una conversación.</h2><p>Clínica Demo es una identidad de muestra creada para presentar una experiencia digital adaptable a consultorios y centros médicos. En la versión final, este espacio contará la historia real de la institución, su equipo, sus valores y los servicios que brinda.</p><p>Queremos que pedir un turno sea sencillo, que la información esté clara y que cada paciente pueda recibir acompañamiento antes y después de la consulta.</p><div class="values-grid"><div><strong>01</strong><h3>Cercanía</h3><p>Escucha y atención respetuosa.</p></div><div><strong>02</strong><h3>Confianza</h3><p>Información clara y responsable.</p></div><div><strong>03</strong><h3>Organización</h3><p>Turnos y documentación más accesibles.</p></div></div><button class="btn" data-open-booking>Solicitar un turno</button></div></div><div class="history-contact"><div><span class="eyebrow">ESTAMOS PARA VOS</span><h2>¿Querés conocernos mejor?</h2><p>Escribinos o solicitá un turno para recibir orientación.</p></div><button class="btn btn-outline" data-open-whatsapp>Contactar a secretaría</button></div>`,
+    </div><p class="PRUEBA-note">Los perfiles profesionales se actualizarán con la información oficial de la clínica. Las especialidades sin profesional asignado están preparadas para completar con datos reales.</p>`,
+  clinica: `<div class="internal-hero clinic-history-hero"><span class="eyebrow">NUESTRA HISTORIA</span><h1>Una clínica que crece con su comunidad.</h1><p>Creemos que una buena atención combina conocimiento médico, escucha y organización. Por eso buscamos que cada persona encuentre un espacio de confianza desde el primer contacto.</p></div><div class="history-layout"><div class="history-art"><div class="history-plus">+</div><span>ATENCIÓN<br>CON CALIDEZ</span></div><div class="history-copy"><span class="eyebrow">QUIÉNES SOMOS</span><h2>La salud empieza con una conversación.</h2><p>Clínica es una identidad de muestra creada para presentar una experiencia digital adaptable a consultorios y centros médicos. En la versión final, este espacio contará la historia real de la institución, su equipo, sus valores y los servicios que brinda.</p><p>Queremos que pedir un turno sea sencillo, que la información esté clara y que cada paciente pueda recibir acompañamiento antes y después de la consulta.</p><div class="values-grid"><div><strong>01</strong><h3>Cercanía</h3><p>Escucha y atención respetuosa.</p></div><div><strong>02</strong><h3>Confianza</h3><p>Información clara y responsable.</p></div><div><strong>03</strong><h3>Organización</h3><p>Turnos y documentación más accesibles.</p></div></div><button class="btn" data-open-booking>Solicitar un turno</button></div></div><div class="history-contact"><div><span class="eyebrow">ESTAMOS PARA VOS</span><h2>¿Querés conocernos mejor?</h2><p>Escribinos o solicitá un turno para recibir orientación.</p></div><button class="btn btn-outline" data-open-whatsapp>Contactar a secretaría</button></div>`,
   especialidades: `<div class="internal-hero"><span class="eyebrow">ESPECIALIDADES</span><h1>Atención para cada etapa de tu vida.</h1><p>Explorá los rubros médicos y avanzá a la solicitud de turno con la especialidad que necesitás.</p></div><div class="specialty-grid internal-specialty-grid"><button class="specialty" data-specialty="Clínica Médica"><span class="specialty-icon mint">✚</span><strong>Clínica Médica</strong><small>Atención general y seguimiento</small></button><button class="specialty" data-specialty="Cardiología"><span class="specialty-icon peach">♡</span><strong>Cardiología</strong><small>Cuidado de la salud cardiovascular</small></button><button class="specialty" data-specialty="Pediatría"><span class="specialty-icon blue">☼</span><strong>Pediatría</strong><small>Salud y desarrollo infantil</small></button><button class="specialty" data-specialty="Dermatología"><span class="specialty-icon lavender">◉</span><strong>Dermatología</strong><small>Cuidado integral de la piel</small></button><button class="specialty" data-specialty="Ginecología"><span class="specialty-icon peach">✿</span><strong>Ginecología</strong><small>Salud y prevención</small></button><button class="specialty" data-specialty="Traumatología"><span class="specialty-icon mint">⌁</span><strong>Traumatología</strong><small>Huesos, articulaciones y movimiento</small></button></div><div class="specialty-cta"><div><h2>¿No sabés qué especialidad elegir?</h2><p>Contactá a secretaría y te orientamos.</p></div><button class="btn" data-open-whatsapp>Te asesoramos</button></div>`
 };
 function openInternalView(name){
@@ -344,26 +344,26 @@ function showCleanAnswer(answer){
 }
 function returnToBotHome(){
   chatMessages.replaceChildren();
-  addChatMessage('¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué podemos ayudarte?','bot');
+  addChatMessage('¡Hola! 👋 Soy el asistente virtual de la clínica. ¿En qué popruebas ayudarte?','bot');
   chatResetHome.hidden=true;
   chatInputForm.hidden=false;
   chatInput.value='';
   botState='menu';
   setBotPrompt('Elegí una opción:');
   chatOptions.hidden=false;
-  chatStatus.textContent='Asistente demostrativo: la agenda y los datos de ejemplo no son reales.';
+  chatStatus.textContent='Asistente pruebastrativo: la agenda y los datos de ejemplo no son reales.';
 }
 chatResetHome.addEventListener('click',returnToBotHome);
 function chooseBotAction(action){
   if(action==='appointment'){
-    botState='dni'; addChatMessage('Para buscar tu turno, ingresá tu DNI sin puntos ni espacios. En esta demo usá 30123456.','bot');
+    botState='dni'; addChatMessage('Para buscar tu turno, ingresá tu DNI sin puntos ni espacios. En esta PRUEBA usá 30123456.','bot');
     setBotPrompt('Consulta de turno','Ingresá tu DNI'); chatOptions.hidden=true; chatInput.focus(); return;
   }
   if(action==='specialties'){
     showCleanAnswer('Estas son las especialidades de ejemplo: Clínica Médica, Cardiología y Pediatría. También están previstas Dermatología, Ginecología y Traumatología. Los profesionales y servicios deben confirmarse con la clínica antes de publicar la web.'); return;
   }
   if(action==='hours'){
-    showCleanAnswer('Los horarios y la dirección todavía deben configurarse con los datos reales de la clínica. En esta demo no quiero darte información que podría ser incorrecta.'); return;
+    showCleanAnswer('Los horarios y la dirección todavía deben configurarse con los datos reales de la clínica. En esta PRUEBA no quiero darte información que podría ser incorrecta.'); return;
   }
   if(action==='preparation'){
     addChatMessage('La preparación depende del estudio o consulta. Decime cuál necesitás consultar; la información deberá ser validada por el equipo médico. No suspendas medicamentos ni cambies indicaciones sin consultar a un profesional.','bot');
@@ -388,9 +388,9 @@ chatInputForm.addEventListener('submit',event=>{
       .then(data=>{
         if(data.found && data.appointments.length){
           const details=data.appointments.map(a=>`${a.doctor} · ${a.specialty} · ${a.date} a las ${a.time}`).join('\\n');
-          showCleanAnswer(`Encontré tu turno${data.appointments.length>1?'s':''}:\\n${details}${data.demo?'\\n\\nTurno ficticio de demostración.':''}`);
+          showCleanAnswer(`Encontré tu turno${data.appointments.length>1?'s':''}:\\n${details}${data.PRUEBA?'\\n\\nTurno ficticio de pruebastración.':''}`);
         }else{
-          showCleanAnswer(data.message || 'No encontré turnos para ese DNI en la agenda de demostración.');
+          showCleanAnswer(data.message || 'No encontré turnos para ese DNI en la agenda de pruebastración.');
         }
       })
       .catch(error=>showCleanAnswer(error.message))

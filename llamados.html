@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Llamado de pacientes | Clínica Demo</title><link rel="stylesheet" href="css/panels.css">
+<title>Llamado de pacientes | Clínica</title><link rel="stylesheet" href="css/panels.css">
 <style>
 .display #patientName{min-height:1.25em}.display .room{min-height:1.4em}.screen-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:22px auto}.screen-actions button{font-size:1rem}.screen-status{font-size:.82rem;opacity:.75;margin-top:12px}.call-flash{animation:callFlash .7s ease-in-out 2}@keyframes callFlash{50%{transform:scale(1.025);opacity:.75}}
 </style></head>
@@ -15,7 +15,7 @@
 <div class="screen-actions"><button class="btn" id="sound">Activar sonido de la pantalla</button><button class="btn secondary" id="testVoice">Probar voz</button></div>
 <p id="screenStatus" class="screen-status" aria-live="polite">Conectando con el sistema…</p>
 <div class="previous" id="previous"></div>
-<p class="sub" style="font-size:.8rem;margin-top:35px">Pantalla institucional de demostración</p>
+<p class="sub" style="font-size:.8rem;margin-top:35px">Pantalla de llamados de pacientesstración</p>
 <script src="js/config.js"></script><script src="js/panels.js"></script>
 <script>
 let soundEnabled=false,lastId=null,lastCall=null,refreshBusy=false;
@@ -44,7 +44,7 @@ $('#sound').addEventListener('click',()=>{
 });
 $('#testVoice').addEventListener('click',()=>{
   if(!soundEnabled){$('#screenStatus').textContent='Primero pulsá “Activar sonido de la pantalla”.';return}
-  speak('Prueba de audio. Paciente de demostración, dirigirse al consultorio número tres.');
+  speak('Prueba de audio. Paciente de pruebastración, dirigirse al consultorio número tres.');
 });
 async function refresh(){
  if(refreshBusy)return;refreshBusy=true;

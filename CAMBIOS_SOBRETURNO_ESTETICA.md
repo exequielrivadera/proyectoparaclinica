@@ -16,4 +16,4 @@
 3. Publicá los cambios en GitHub. Render volverá a desplegar el backend y GitHub Pages publicará el frontend.
 4. Probá el ingreso de un sobreturno con datos ficticios, marcá el consultorio del médico como libre y llamá al siguiente paciente para verificar la pantalla `llamados.html`.
 
-Este proyecto continúa siendo una demo. No usar con datos médicos reales sin autenticación, autorización, privacidad, respaldos y persistencia de producción.
+Este proyecto continúa siendo una PRUEBA. No usar con datos médicos reales sin autenticación, autorización, privacidad, respaldos y persistencia de producción.

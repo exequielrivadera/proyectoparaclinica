@@ -1,6 +1,6 @@
 """
-Backend de turnos para Clínica Demo.
-Demo por defecto. Antes de usar pacientes reales, configurar SMTP, SECRET_KEY,
+Backend de turnos para Clínica.
+PRUEBA por defecto. Antes de usar pacientes reales, configurar SMTP, SECRET_KEY,
 API_BASE_URL/CORS y completar verificación de identidad, rate limiting y despliegue HTTPS.
 """
 import os, re, sqlite3, smtplib, logging, secrets, mimetypes
@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ROOT.parent
 load_dotenv(ROOT / ".env")
 TZ = ZoneInfo(os.getenv("TIMEZONE", "America/Argentina/Buenos_Aires"))
-DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
+prueba_MODE = os.getenv("prueba_MODE", "true").lower() == "true"
 DB_PATH = Path(os.getenv("DATABASE_PATH", str(ROOT / "instance" / "clinica.sqlite3")))
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 PRIVATE_STUDIES_DIR = ROOT / "private_studies"
@@ -29,7 +29,7 @@ app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
 # Servir frontend y API desde el mismo proceso evita el error "Failed to fetch"
-# por URLs de API equivocadas o CORS en la demo. No exponer backend, base de datos ni archivos privados.
+# por URLs de API equivocadas o CORS en la PRUEBA. No exponer backend, base de datos ni archivos privados.
 @app.get("/")
 def public_home():
     return send_from_directory(PROJECT_ROOT, "index.html")
@@ -58,8 +58,8 @@ DOCTORS = {
     "Ginecología": ["Profesional a incorporar"],
     "Traumatología": ["Profesional a incorporar"],
 }
-DEMO_APPOINTMENTS = [{
-    "dni":"30123456", "first_names":"Paciente", "last_names":"Demostración",
+prueba_APPOINTMENTS = [{
+    "dni":"30123456", "first_names":"Paciente", "last_names":"pruebastración",
     "email":"", "phone":"", "specialty":"Cardiología", "doctor":"Dra. Ana López",
     "starts_at":"2026-10-28T10:30:00-03:00", "status":"booked"
 }]
@@ -158,14 +158,14 @@ def init_db():
             con.execute("UPDATE appointments SET patient_id=? WHERE dni=? AND patient_id IS NULL", (pat["id"], pat["dni"]))
         for doc in con.execute("SELECT id,full_name FROM doctors").fetchall():
             con.execute("UPDATE appointments SET doctor_id=? WHERE doctor=? AND doctor_id IS NULL", (doc["id"], doc["full_name"]))
-        # Demo patient data only. These records are fictional and safe for a walkthrough.
+        # PRUEBA patient data only. These records are fictional and safe for a walkthrough.
         con.execute("INSERT OR IGNORE INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
-                    ("30123456","Juan","Pérez","juan.demo@example.com","3804000000",now_local().isoformat()))
+                    ("30123456","Juan","Pérez","juan.PRUEBA@example.com","3804000000",now_local().isoformat()))
         con.execute("INSERT OR IGNORE INTO patients(dni,first_names,last_names,email,phone,created_at) VALUES(?,?,?,?,?,?)",
-                    ("28987654","María","Gómez","maria.demo@example.com","3804111111",now_local().isoformat()))
+                    ("28987654","María","Gómez","maria.PRUEBA@example.com","3804111111",now_local().isoformat()))
         con.execute("INSERT OR IGNORE INTO studies(dni,title,study_type,professional,status,published,created_at,published_at) VALUES(?,?,?,?,?,?,?,?)",
-                    ("30123456","Análisis clínico de demostración","Laboratorio","Dra. Ana López","available",1,now_local().isoformat(),now_local().isoformat()))
-        # Vincular también los turnos anteriores a pacientes demo insertados en esta misma inicialización.
+                    ("30123456","Análisis clínico de pruebastración","Laboratorio","Dra. Ana López","available",1,now_local().isoformat(),now_local().isoformat()))
+        # Vincular también los turnos anteriores a pacientes PRUEBA insertados en esta misma inicialización.
         con.execute("UPDATE appointments SET patient_id=(SELECT id FROM patients WHERE patients.dni=appointments.dni) WHERE patient_id IS NULL")
         con.execute("UPDATE appointments SET doctor_id=(SELECT id FROM doctors WHERE doctors.full_name=appointments.doctor) WHERE doctor_id IS NULL")
 
@@ -219,7 +219,7 @@ def send_email(to_addr, subject, body):
 def appointment_text(row):
     starts=datetime.fromisoformat(row["starts_at"]).astimezone(TZ)
     return (f"Hola {row['first_names']},\n\n"
-            f"Tu turno en Clínica Demo está registrado.\n"
+            f"Tu turno en Clínica está registrado.\n"
             f"Especialidad: {row['specialty']}\nProfesional: {row['doctor']}\n"
             f"Fecha: {starts.strftime('%d/%m/%Y')}\nHora: {starts.strftime('%H:%M')}\n\n"
             "Si tu horario ya pasó y todavía no fuiste atendido, consultá en Administración el estado de tu turno.\n"
@@ -230,7 +230,7 @@ def send_confirmation(appointment_id):
     with connect() as con:
         row=con.execute("SELECT * FROM appointments WHERE id=?", (appointment_id,)).fetchone()
     if not row: return False
-    ok=send_email(row["email"], "Confirmación de turno - Clínica Demo", appointment_text(row))
+    ok=send_email(row["email"], "Confirmación de turno - Clínica", appointment_text(row))
     if ok:
         with connect() as con: con.execute("UPDATE appointments SET confirmation_sent_at=? WHERE id=?", (now_local().isoformat(), appointment_id))
     return ok
@@ -249,7 +249,7 @@ def process_reminders():
             # tolerancia de 10 minutos para el trabajo del scheduler.
             if row[field] is None and abs((start-target).total_seconds()) <= 300:
                 body=(f"Hola {row['first_names']},\n\n"
-                      + ("Te recordamos que mañana tenés un turno en Clínica Demo.\n" if field=="reminder_24h_sent_at" else "Te recordamos que hoy tenés un turno en Clínica Demo.\n")
+                      + ("Te recordamos que mañana tenés un turno en Clínica.\n" if field=="reminder_24h_sent_at" else "Te recordamos que hoy tenés un turno en Clínica.\n")
                       + f"Especialidad: {row['specialty']}\nProfesional: {row['doctor']}\n"
                       + f"Fecha: {start.strftime('%d/%m/%Y')}\nHora: {start.strftime('%H:%M')}\n\n"
                       "Si tu horario ya pasó y todavía no fuiste atendido, consultá en Administración el estado de tu turno.\n"
@@ -262,7 +262,7 @@ def process_reminders():
 
 @app.get("/api/health")
 def health():
-    return jsonify(status="ok", mode="demo" if DEMO_MODE else "configured", smtp_configured=smtp_ready())
+    return jsonify(status="ok", mode="PRUEBA" if prueba_MODE else "configured", smtp_configured=smtp_ready())
 
 @app.get("/api/specialties")
 def specialties():
@@ -296,12 +296,12 @@ def availability():
             dt=datetime.fromisoformat(row["starts_at"]).astimezone(TZ)
             if dt.date()==target: booked.add(dt.strftime("%H:%M"))
         except ValueError: pass
-    # En modo demo, crear una agenda visible; bloqueos ficticios para ilustrar disponibilidad.
-    blocked_demo={"2026-10-26":["09:00","10:30"],"2026-10-27":["08:30","09:30","11:00"],"2026-10-28":["10:00"]}
-    if DEMO_MODE: booked.update(blocked_demo.get(day, []))
+    # En modo PRUEBA, crear una agenda visible; bloqueos ficticios para ilustrar disponibilidad.
+    blocked_prueba={"2026-10-26":["09:00","10:30"],"2026-10-27":["08:30","09:30","11:00"],"2026-10-28":["10:00"]}
+    if prueba_MODE: booked.update(blocked_prueba.get(day, []))
     return jsonify(date=day, specialty=specialty, doctor=chosen_doctor,
                    slots=[slot for slot in SLOTS if slot not in booked],
-                   demo=DEMO_MODE, message="Agenda de demostración" if DEMO_MODE else "Disponibilidad actual")
+                   PRUEBA=prueba_MODE, message="Agenda de pruebastración" if prueba_MODE else "Disponibilidad actual")
 
 @app.post("/api/appointments")
 def create_appointment():
@@ -329,8 +329,8 @@ def create_appointment():
     except ValueError: return jsonify(error="Fecha u horario inválido."),400
     if starts <= now_local(): return jsonify(error="Elegí una fecha y hora futuras."),400
     if starts.weekday()==6: return jsonify(error="La clínica no agenda los domingos."),400
-    if DEMO_MODE:
-        # Demo persists fictional test reservations, clearly identified as non-production.
+    if prueba_MODE:
+        # PRUEBA persists fictional test reservations, clearly identified as non-production.
         pass
     doctor_id = doctor_name_to_id(doctor)
     if not doctor_id: return jsonify(error="El profesional ya no está habilitado."),409
@@ -359,8 +359,8 @@ def create_appointment():
         patient_row=con.execute("SELECT id,first_names,last_names,dni,email,phone FROM patients WHERE id=?",(patient_id,)).fetchone()
     return jsonify(ok=True, id=aid, patient_id=patient_id, patient=dict(patient_row), appointment={"specialty":specialty,"doctor":doctor,
         "date":starts.strftime("%Y-%m-%d"),"time":starts.strftime("%H:%M")},
-        email_sent=email_sent, demo=DEMO_MODE,
-        message="Turno de demostración guardado." if DEMO_MODE else "Turno registrado."),201
+        email_sent=email_sent, PRUEBA=prueba_MODE,
+        message="Turno de pruebastración guardado." if prueba_MODE else "Turno registrado."),201
 
 @app.get("/api/patients/lookup")
 def patient_lookup():
@@ -435,14 +435,14 @@ def bot_appointment_lookup():
     data=request.get_json(silent=True) or {}
     dni=re.sub(r"\D","",str(data.get("dni","")))
     if not re.fullmatch(r"\d{7,9}",dni): return jsonify(error="Ingresá un DNI válido."),400
-    # Demo lookup uses a fixed sample. Real mode refuses disclosure until OTP verification exists.
-    if DEMO_MODE:
-        matching=[a for a in DEMO_APPOINTMENTS if a["dni"]==dni and datetime.fromisoformat(a["starts_at"])>now_local()]
+    # PRUEBA lookup uses a fixed sample. Real mode refuses disclosure until OTP verification exists.
+    if prueba_MODE:
+        matching=[a for a in prueba_APPOINTMENTS if a["dni"]==dni and datetime.fromisoformat(a["starts_at"])>now_local()]
         return jsonify(found=bool(matching), appointments=[{
             "specialty":a["specialty"],"doctor":a["doctor"],
             "date":datetime.fromisoformat(a["starts_at"]).astimezone(TZ).strftime("%d/%m/%Y"),
             "time":datetime.fromisoformat(a["starts_at"]).astimezone(TZ).strftime("%H:%M"),
-            "demo":True} for a in matching], demo=True)
+            "PRUEBA":True} for a in matching], PRUEBA=True)
     return jsonify(error="Para proteger tus datos, primero debemos verificar tu identidad con un código enviado a tu correo o teléfono registrado."),403
 
 @app.post("/api/appointments/<int:appointment_id>/cancel")
@@ -450,8 +450,8 @@ def cancel_appointment(appointment_id):
     # Cancelación pública no habilitada sin verificación del titular.
     return jsonify(error="Para cancelar el turno, contactá a secretaría. La cancelación en línea requiere verificar tu identidad."),403
 
-# --- Paneles institucionales (demo con datos ficticios) ---
-# IMPORTANTE: estas rutas son para demostración. No publicar con datos reales hasta implementar
+# --- Paneles institucionales (PRUEBA con datos ficticios) ---
+# IMPORTANTE: estas rutas son para pruebastración. No publicar con datos reales hasta implementar
 # autenticación robusta, autorización por rol, sesiones seguras, CSRF/rate-limit y auditoría reforzada.
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
@@ -468,7 +468,7 @@ def admin_appointments():
     query += " ORDER BY starts_at DESC LIMIT 300"
     with connect() as con:
         rows=con.execute(query,params).fetchall()
-    return jsonify(appointments=[dict(r) for r in rows], demo=DEMO_MODE)
+    return jsonify(appointments=[dict(r) for r in rows], PRUEBA=prueba_MODE)
 
 @app.get("/api/admin/patients")
 def admin_patients():
@@ -479,7 +479,7 @@ def admin_patients():
             rows=con.execute("SELECT * FROM patients WHERE dni LIKE ? OR first_names LIKE ? OR last_names LIKE ? ORDER BY last_names LIMIT 100",(like,like,like)).fetchall()
         else:
             rows=con.execute("SELECT * FROM patients ORDER BY last_names LIMIT 100").fetchall()
-    return jsonify(patients=[dict(r) for r in rows], demo=DEMO_MODE)
+    return jsonify(patients=[dict(r) for r in rows], PRUEBA=prueba_MODE)
 
 @app.post("/api/admin/patients")
 def admin_create_patient():
@@ -597,7 +597,7 @@ def doctor_status_get():
         known=con.execute("SELECT id,room FROM doctors WHERE full_name=? AND active=1",(doctor,)).fetchone()
         if not known: return jsonify(error="El profesional no está activo."),404
         row=con.execute("SELECT * FROM doctor_status WHERE doctor=?",(doctor,)).fetchone()
-    return jsonify(doctor=doctor, status=dict(row) if row else {"doctor":doctor,"room":known["room"],"is_free":0,"updated_at":None}, demo=DEMO_MODE)
+    return jsonify(doctor=doctor, status=dict(row) if row else {"doctor":doctor,"room":known["room"],"is_free":0,"updated_at":None}, PRUEBA=prueba_MODE)
 
 @app.post("/api/doctor/status")
 def doctor_status_set():
@@ -655,7 +655,7 @@ def admin_doctor_status():
                 else:
                     item.update({"last_call":None,"call_count":0})
                 doctors.append(item)
-    return jsonify(doctors=doctors,demo=DEMO_MODE)
+    return jsonify(doctors=doctors,PRUEBA=prueba_MODE)
 
 @app.post("/api/admin/doctor/<path:doctor>/call-next")
 def admin_call_next(doctor):
@@ -713,9 +713,9 @@ def admin_repeat_call(doctor):
 @app.get("/api/doctor/appointments")
 def doctor_appointments():
     doctor=request.args.get("doctor", "").strip()
-    if not doctor: return jsonify(appointments=[],doctor="",demo=DEMO_MODE)
+    if not doctor: return jsonify(appointments=[],doctor="",PRUEBA=prueba_MODE)
     with connect() as con: rows=con.execute("SELECT * FROM appointments WHERE doctor=? ORDER BY starts_at DESC LIMIT 200",(doctor,)).fetchall()
-    return jsonify(appointments=[dict(r) for r in rows],doctor=doctor,demo=DEMO_MODE)
+    return jsonify(appointments=[dict(r) for r in rows],doctor=doctor,PRUEBA=prueba_MODE)
 
 @app.get("/api/doctor/patient/<dni>")
 def doctor_patient(dni):
@@ -724,27 +724,27 @@ def doctor_patient(dni):
         patient=con.execute("SELECT * FROM patients WHERE dni=?",(dni,)).fetchone()
         notes=con.execute("SELECT * FROM clinical_notes WHERE dni=? ORDER BY created_at DESC",(dni,)).fetchall()
         studies=con.execute("SELECT id,dni,title,study_type,professional,status,filename,original_name,published,created_at,published_at,delivered_at FROM studies WHERE dni=? ORDER BY created_at DESC",(dni,)).fetchall()
-    return jsonify(patient=dict(patient) if patient else None,notes=[dict(r) for r in notes],studies=[dict(r) for r in studies],demo=DEMO_MODE)
+    return jsonify(patient=dict(patient) if patient else None,notes=[dict(r) for r in notes],studies=[dict(r) for r in studies],PRUEBA=prueba_MODE)
 
 @app.post("/api/doctor/notes")
 def doctor_add_note():
-    d=request.get_json(silent=True) or {}; dni=re.sub(r"\D","",str(d.get("dni",""))); note=str(d.get("note","")).strip(); doctor=str(d.get("doctor","Profesional de demo"))
+    d=request.get_json(silent=True) or {}; dni=re.sub(r"\D","",str(d.get("dni",""))); note=str(d.get("note","")).strip(); doctor=str(d.get("doctor","Profesional de PRUEBA"))
     if not re.fullmatch(r"\d{7,9}",dni) or not note: return jsonify(error="DNI y nota son obligatorios."),400
     with connect() as con:
-        if not con.execute("SELECT 1 FROM patients WHERE dni=?",(dni,)).fetchone(): return jsonify(error="Paciente no encontrado en la demo."),404
+        if not con.execute("SELECT 1 FROM patients WHERE dni=?",(dni,)).fetchone(): return jsonify(error="Paciente no encontrado en la PRUEBA."),404
         con.execute("INSERT INTO clinical_notes(dni,doctor,note,created_at) VALUES(?,?,?,?)",(dni,doctor,note,now_local().isoformat()))
-    return jsonify(ok=True,message="Nota de demostración guardada."),201
+    return jsonify(ok=True,message="Nota de pruebastración guardada."),201
 
 @app.post("/api/doctor/studies")
 def doctor_add_study():
-    # Para la demo acepta un archivo adjunto opcional; los archivos quedan fuera del directorio público.
+    # Para la PRUEBA acepta un archivo adjunto opcional; los archivos quedan fuera del directorio público.
     if request.content_type and request.content_type.startswith("multipart/form-data"):
         d=request.form
         uploaded=request.files.get("file")
     else:
         d=request.get_json(silent=True) or {}
         uploaded=None
-    dni=re.sub(r"\D","",str(d.get("dni",""))); title=str(d.get("title","")).strip(); typ=str(d.get("study_type","Laboratorio")).strip(); prof=str(d.get("professional","Profesional de demo")).strip(); status=str(d.get("status","processing"))
+    dni=re.sub(r"\D","",str(d.get("dni",""))); title=str(d.get("title","")).strip(); typ=str(d.get("study_type","Laboratorio")).strip(); prof=str(d.get("professional","Profesional de PRUEBA")).strip(); status=str(d.get("status","processing"))
     if not re.fullmatch(r"\d{7,9}",dni) or not title: return jsonify(error="DNI y nombre del estudio son obligatorios."),400
     if status not in {"processing","available","delivered"}: status="processing"
     filename=None; original_name=None
@@ -763,20 +763,20 @@ def doctor_add_study():
             return jsonify(error="Paciente no encontrado. Primero registralo desde Administración."),404
         cur=con.execute("INSERT INTO studies(dni,title,study_type,professional,status,filename,original_name,published,created_at,published_at,delivered_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(dni,title,typ,prof,status,filename,original_name,1 if status in {"available","delivered"} else 0,now_local().isoformat(),now_local().isoformat() if status in {"available","delivered"} else None,now_local().isoformat() if status=="delivered" else None))
         sid=cur.lastrowid
-    return jsonify(ok=True,id=sid,filename=original_name,message="Estudio guardado"+(" con archivo adjunto." if filename else " como registro de texto.")+(" Ya está publicado en el portal demo." if status in {"available","delivered"} else " Se publicará cuando cambies su estado a disponible.")),201
+    return jsonify(ok=True,id=sid,filename=original_name,message="Estudio guardado"+(" con archivo adjunto." if filename else " como registro de texto.")+(" Ya está publicado en el portal PRUEBA." if status in {"available","delivered"} else " Se publicará cuando cambies su estado a disponible.")),201
 
 @app.post("/api/patient/portal")
 def patient_portal_login():
-    # Acceso únicamente demostrativo. En producción debe reemplazarse por credenciales verificadas y sesiones seguras.
-    if not DEMO_MODE:
-        return jsonify(error="El portal demo no está habilitado en producción."),403
+    # Acceso únicamente pruebastrativo. En producción debe reemplazarse por credenciales verificadas y sesiones seguras.
+    if not prueba_MODE:
+        return jsonify(error="El portal PRUEBA no está habilitado en producción."),403
     d=request.get_json(silent=True) or {}
     dni=re.sub(r"\D","",str(d.get("dni",""))); password=str(d.get("password",""))
-    if not re.fullmatch(r"\d{7,9}",dni) or password != os.getenv("DEMO_PORTAL_PASSWORD", "demo1234"):
-        return jsonify(error="DNI o contraseña de demostración incorrectos."),401
+    if not re.fullmatch(r"\d{7,9}",dni) or password != os.getenv("prueba_PORTAL_PASSWORD", "prueba1234"):
+        return jsonify(error="DNI o contraseña de pruebastración incorrectos."),401
     with connect() as con:
         patient=con.execute("SELECT id,dni,first_names,last_names FROM patients WHERE dni=?",(dni,)).fetchone()
-        if not patient: return jsonify(error="Paciente no encontrado en la demo."),404
+        if not patient: return jsonify(error="Paciente no encontrado en la PRUEBA."),404
         token=secrets.token_urlsafe(32); expires=(now_local()+timedelta(minutes=30)).isoformat()
         con.execute("DELETE FROM patient_portal_sessions WHERE expires_at < ?",(now_local().isoformat(),))
         con.execute("INSERT INTO patient_portal_sessions(token,dni,expires_at,created_at) VALUES(?,?,?,?)",(token,dni,expires,now_local().isoformat()))
@@ -786,7 +786,7 @@ def patient_portal_login():
         item=dict(st)
         item["file_url"]=f"/api/patient/studies/{item['id']}/file?token={token}" if item.get("original_name") else None
         items.append(item)
-    return jsonify(ok=True,patient=dict(patient),studies=items,demo=True,expires_at=expires),200
+    return jsonify(ok=True,patient=dict(patient),studies=items,PRUEBA=True,expires_at=expires),200
 
 @app.get("/api/patient/studies/<int:sid>/file")
 def patient_study_file(sid):
@@ -803,19 +803,19 @@ def patient_study_file(sid):
 
 @app.get("/api/patient/studies")
 def patient_studies():
-    # Solo para datos ficticios de la demo; sustituir por sesión verificada antes de producción.
+    # Solo para datos ficticios de la PRUEBA; sustituir por sesión verificada antes de producción.
     dni=re.sub(r"\D","",request.args.get("dni",""))
     if not re.fullmatch(r"\d{7,9}",dni): return jsonify(error="Ingresá un DNI válido."),400
     with connect() as con:
         patient=con.execute("SELECT first_names,last_names,dni FROM patients WHERE dni=?",(dni,)).fetchone()
         rows=con.execute("SELECT id,title,study_type,professional,status,published,created_at,published_at,delivered_at FROM studies WHERE dni=? AND published=1 ORDER BY created_at DESC",(dni,)).fetchall()
-    if not patient: return jsonify(error="No encontramos ese paciente en la demo. Probá con el DNI 30123456."),404
-    return jsonify(patient=dict(patient),studies=[dict(r) for r in rows],demo=True)
+    if not patient: return jsonify(error="No encontramos ese paciente en la PRUEBA. Probá con el DNI 30123456."),404
+    return jsonify(patient=dict(patient),studies=[dict(r) for r in rows],PRUEBA=True)
 
 @app.get("/api/display/calls")
 def display_calls():
     with connect() as con: rows=con.execute("SELECT c.*,a.appointment_type,a.doctor,a.specialty FROM call_events c JOIN appointments a ON a.id=c.appointment_id ORDER BY c.id DESC LIMIT 5").fetchall()
-    return jsonify(calls=[dict(r) for r in rows],demo=DEMO_MODE)
+    return jsonify(calls=[dict(r) for r in rows],PRUEBA=prueba_MODE)
 
 @app.post("/api/admin/appointments/<int:aid>/call")
 def call_patient(aid):
@@ -861,5 +861,5 @@ if os.getenv("RUN_SCHEDULER","false").lower()=="true" and __name__ != "__main__"
 
 if __name__=="__main__":
     scheduler=start_scheduler()
-    log.info("Clínica backend activo en modo %s", "DEMO" if DEMO_MODE else "PRODUCCIÓN")
+    log.info("Clínica backend activo en modo %s", "PRUEBA" if prueba_MODE else "PRODUCCIÓN")
     app.run(host=os.getenv("HOST","127.0.0.1"),port=int(os.getenv("PORT","5000")),debug=False)
