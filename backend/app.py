@@ -3,11 +3,13 @@ Backend de turnos para Clínica Demo.
 Demo por defecto. Antes de usar pacientes reales, configurar SMTP, SECRET_KEY,
 API_BASE_URL/CORS y completar verificación de identidad, rate limiting y despliegue HTTPS.
 """
-import os, re, sqlite3, smtplib, logging
+import os, re, sqlite3, smtplib, logging, secrets, mimetypes
 from email.message import EmailMessage
 from datetime import datetime, timedelta, date
 from zoneinfo import ZoneInfo
 from pathlib import Path
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -20,6 +22,9 @@ TZ = ZoneInfo(os.getenv("TIMEZONE", "America/Argentina/Buenos_Aires"))
 DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 DB_PATH = Path(os.getenv("DATABASE_PATH", str(ROOT / "instance" / "clinica.sqlite3")))
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+PRIVATE_STUDIES_DIR = ROOT / "private_studies"
+PRIVATE_STUDIES_DIR.mkdir(parents=True, exist_ok=True)
+app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
@@ -117,6 +122,9 @@ def init_db():
           id INTEGER PRIMARY KEY AUTOINCREMENT, appointment_id INTEGER NOT NULL,
           patient_name TEXT NOT NULL, room TEXT NOT NULL, called_at TEXT NOT NULL,
           status TEXT NOT NULL DEFAULT 'called'
+        );
+        CREATE TABLE IF NOT EXISTS patient_portal_sessions (
+          token TEXT PRIMARY KEY, dni TEXT NOT NULL, expires_at TEXT NOT NULL, created_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_studies_dni ON studies(dni, created_at);
         CREATE INDEX IF NOT EXISTS idx_calls_called ON call_events(called_at);
@@ -603,9 +611,12 @@ def doctor_status_set():
         known=con.execute("SELECT id FROM doctors WHERE full_name=? AND active=1",(doctor,)).fetchone()
         if not known: return jsonify(error="Seleccioná un profesional activo."),400
         previous=con.execute("SELECT * FROM doctor_status WHERE doctor=?",(doctor,)).fetchone()
-        if is_free and previous and not previous["is_free"]:
+        if is_free:
+            # Al marcar libre, cerrar primero la atención actual y liberar el turno anterior.
             current=con.execute("SELECT id FROM appointments WHERE doctor=? AND status IN ('called','in_consultation') ORDER BY id DESC LIMIT 1",(doctor,)).fetchone()
-            if current: con.execute("UPDATE appointments SET status='attended' WHERE id=?",(current["id"],))
+            if current:
+                con.execute("UPDATE appointments SET status='attended' WHERE id=?",(current["id"],))
+                con.execute("UPDATE call_events SET status='attended' WHERE appointment_id=? AND status='called'",(current["id"],))
         if not is_free:
             con.execute("UPDATE appointments SET status='in_consultation' WHERE doctor=? AND status='called'",(doctor,))
         con.execute("INSERT INTO doctor_status(doctor,room,is_free,updated_at) VALUES(?,?,?,?) ON CONFLICT(doctor) DO UPDATE SET room=excluded.room,is_free=excluded.is_free,updated_at=excluded.updated_at",(doctor,room,is_free,now))
@@ -712,7 +723,7 @@ def doctor_patient(dni):
     with connect() as con:
         patient=con.execute("SELECT * FROM patients WHERE dni=?",(dni,)).fetchone()
         notes=con.execute("SELECT * FROM clinical_notes WHERE dni=? ORDER BY created_at DESC",(dni,)).fetchall()
-        studies=con.execute("SELECT id,dni,title,study_type,professional,status,published,created_at,published_at,delivered_at FROM studies WHERE dni=? ORDER BY created_at DESC",(dni,)).fetchall()
+        studies=con.execute("SELECT id,dni,title,study_type,professional,status,filename,original_name,published,created_at,published_at,delivered_at FROM studies WHERE dni=? ORDER BY created_at DESC",(dni,)).fetchall()
     return jsonify(patient=dict(patient) if patient else None,notes=[dict(r) for r in notes],studies=[dict(r) for r in studies],demo=DEMO_MODE)
 
 @app.post("/api/doctor/notes")
@@ -726,14 +737,69 @@ def doctor_add_note():
 
 @app.post("/api/doctor/studies")
 def doctor_add_study():
-    d=request.get_json(silent=True) or {}; dni=re.sub(r"\D","",str(d.get("dni",""))); title=str(d.get("title","")).strip(); typ=str(d.get("study_type","Laboratorio")).strip(); prof=str(d.get("professional","Profesional de demo")).strip(); status=str(d.get("status","processing"))
+    # Para la demo acepta un archivo adjunto opcional; los archivos quedan fuera del directorio público.
+    if request.content_type and request.content_type.startswith("multipart/form-data"):
+        d=request.form
+        uploaded=request.files.get("file")
+    else:
+        d=request.get_json(silent=True) or {}
+        uploaded=None
+    dni=re.sub(r"\D","",str(d.get("dni",""))); title=str(d.get("title","")).strip(); typ=str(d.get("study_type","Laboratorio")).strip(); prof=str(d.get("professional","Profesional de demo")).strip(); status=str(d.get("status","processing"))
     if not re.fullmatch(r"\d{7,9}",dni) or not title: return jsonify(error="DNI y nombre del estudio son obligatorios."),400
     if status not in {"processing","available","delivered"}: status="processing"
+    filename=None; original_name=None
+    if uploaded and uploaded.filename:
+        original_name=secure_filename(uploaded.filename)[:180]
+        ext=Path(original_name).suffix.lower()
+        if ext not in {".pdf", ".png", ".jpg", ".jpeg"}:
+            return jsonify(error="Formato no permitido. Subí PDF, PNG o JPG."),400
+        filename=f"{secrets.token_hex(18)}{ext}"
+        uploaded.save(PRIVATE_STUDIES_DIR / filename)
     with connect() as con:
-        if not con.execute("SELECT 1 FROM patients WHERE dni=?",(dni,)).fetchone(): return jsonify(error="Paciente no encontrado. Primero registralo desde Administración."),404
-        cur=con.execute("INSERT INTO studies(dni,title,study_type,professional,status,published,created_at,published_at,delivered_at) VALUES(?,?,?,?,?,?,?,?,?)",(dni,title,typ,prof,status,1 if status=="available" else 0,now_local().isoformat(),now_local().isoformat() if status=="available" else None,now_local().isoformat() if status=="delivered" else None))
+        if not con.execute("SELECT 1 FROM patients WHERE dni=?",(dni,)).fetchone():
+            if filename:
+                try: (PRIVATE_STUDIES_DIR / filename).unlink(missing_ok=True)
+                except OSError: pass
+            return jsonify(error="Paciente no encontrado. Primero registralo desde Administración."),404
+        cur=con.execute("INSERT INTO studies(dni,title,study_type,professional,status,filename,original_name,published,created_at,published_at,delivered_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",(dni,title,typ,prof,status,filename,original_name,1 if status in {"available","delivered"} else 0,now_local().isoformat(),now_local().isoformat() if status in {"available","delivered"} else None,now_local().isoformat() if status=="delivered" else None))
         sid=cur.lastrowid
-    return jsonify(ok=True,id=sid,message="Estudio de demostración guardado."),201
+    return jsonify(ok=True,id=sid,filename=original_name,message="Estudio guardado"+(" con archivo adjunto." if filename else " como registro de texto.")+(" Ya está publicado en el portal demo." if status in {"available","delivered"} else " Se publicará cuando cambies su estado a disponible.")),201
+
+@app.post("/api/patient/portal")
+def patient_portal_login():
+    # Acceso únicamente demostrativo. En producción debe reemplazarse por credenciales verificadas y sesiones seguras.
+    if not DEMO_MODE:
+        return jsonify(error="El portal demo no está habilitado en producción."),403
+    d=request.get_json(silent=True) or {}
+    dni=re.sub(r"\D","",str(d.get("dni",""))); password=str(d.get("password",""))
+    if not re.fullmatch(r"\d{7,9}",dni) or password != os.getenv("DEMO_PORTAL_PASSWORD", "demo1234"):
+        return jsonify(error="DNI o contraseña de demostración incorrectos."),401
+    with connect() as con:
+        patient=con.execute("SELECT id,dni,first_names,last_names FROM patients WHERE dni=?",(dni,)).fetchone()
+        if not patient: return jsonify(error="Paciente no encontrado en la demo."),404
+        token=secrets.token_urlsafe(32); expires=(now_local()+timedelta(minutes=30)).isoformat()
+        con.execute("DELETE FROM patient_portal_sessions WHERE expires_at < ?",(now_local().isoformat(),))
+        con.execute("INSERT INTO patient_portal_sessions(token,dni,expires_at,created_at) VALUES(?,?,?,?)",(token,dni,expires,now_local().isoformat()))
+        studies=con.execute("SELECT id,title,study_type,professional,status,original_name,created_at,published_at FROM studies WHERE dni=? AND published=1 ORDER BY created_at DESC",(dni,)).fetchall()
+    items=[]
+    for st in studies:
+        item=dict(st)
+        item["file_url"]=f"/api/patient/studies/{item['id']}/file?token={token}" if item.get("original_name") else None
+        items.append(item)
+    return jsonify(ok=True,patient=dict(patient),studies=items,demo=True,expires_at=expires),200
+
+@app.get("/api/patient/studies/<int:sid>/file")
+def patient_study_file(sid):
+    token=request.args.get("token","")
+    with connect() as con:
+        session=con.execute("SELECT dni,expires_at FROM patient_portal_sessions WHERE token=?",(token,)).fetchone()
+        if not session or session["expires_at"] < now_local().isoformat(): return jsonify(error="La sesión del portal venció. Volvé a ingresar."),401
+        study=con.execute("SELECT filename,original_name FROM studies WHERE id=? AND dni=? AND published=1",(sid,session["dni"])).fetchone()
+    if not study or not study["filename"]: return jsonify(error="El archivo no está disponible."),404
+    from flask import send_file
+    path=PRIVATE_STUDIES_DIR / study["filename"]
+    if not path.is_file(): return jsonify(error="No se encuentra el archivo guardado."),404
+    return send_file(path, as_attachment=True, download_name=study["original_name"] or "estudio.pdf", mimetype=mimetypes.guess_type(study["original_name"] or "")[0] or "application/octet-stream", max_age=0)
 
 @app.get("/api/patient/studies")
 def patient_studies():
@@ -748,7 +814,7 @@ def patient_studies():
 
 @app.get("/api/display/calls")
 def display_calls():
-    with connect() as con: rows=con.execute("SELECT * FROM call_events ORDER BY id DESC LIMIT 5").fetchall()
+    with connect() as con: rows=con.execute("SELECT c.*,a.appointment_type,a.doctor,a.specialty FROM call_events c JOIN appointments a ON a.id=c.appointment_id ORDER BY c.id DESC LIMIT 5").fetchall()
     return jsonify(calls=[dict(r) for r in rows],demo=DEMO_MODE)
 
 @app.post("/api/admin/appointments/<int:aid>/call")
@@ -773,6 +839,10 @@ def admin_study_status(sid):
         if not row: return jsonify(error="Estudio no encontrado."),404
         con.execute("UPDATE studies SET status=?,published=?,published_at=?,delivered_at=? WHERE id=?",(status,1 if status in {"available","delivered"} else 0,now if status in {"available","delivered"} else None,now if status=="delivered" else None,sid))
     return jsonify(ok=True,message="Estado del estudio actualizado.")
+
+@app.errorhandler(RequestEntityTooLarge)
+def too_large(_error):
+    return jsonify(error="El archivo supera el límite de 12 MB."),413
 
 
 def start_scheduler():

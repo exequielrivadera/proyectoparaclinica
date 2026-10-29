@@ -10,3 +10,4 @@ uploads_private/*
 *.sqlite
 *.db
 .DS_Store
+backend/private_studies/*

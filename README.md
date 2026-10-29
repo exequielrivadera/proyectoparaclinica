@@ -81,3 +81,11 @@ Esta versión es exclusivamente para presentación. Los paneles y el acceso de p
 - Al marcar un consultorio como libre, el backend finaliza la atención previa y llama automáticamente al siguiente paciente que Administración haya marcado como llegado.
 
 **Importante:** sigue siendo una demo. No usar con pacientes reales ni datos médicos reales. Antes de producción hacen falta autenticación y permisos por rol, verificación de identidad para consultar datos, auditoría, pruebas de seguridad y una base de datos persistente administrada (por ejemplo PostgreSQL); el SQLite de una instancia gratuita no debe considerarse almacenamiento permanente.
+
+## Ajustes demo: atención, estudios y portal
+
+- Al pulsar **Consultorio libre**, el backend marca como `attended` al turno llamado/en atención y luego llama al siguiente paciente que Administración haya marcado como `arrived` para ese médico y día.
+- La pantalla de llamados muestra el nombre completo y consultorio; para los sobreturnos también anuncia por voz que se trata de un sobreturno.
+- El panel médico admite adjuntar un PDF, PNG o JPG de hasta 12 MB. Los archivos se guardan en `backend/private_studies/`, fuera de los recursos públicos, y no deben incluirse en Git.
+- Portal de paciente de demostración: DNI ficticio y contraseña `demo1234` (se puede cambiar mediante `DEMO_PORTAL_PASSWORD`). La sesión de descarga vence a los 30 minutos.
+- **No utilizar datos reales ni desplegar el portal como sistema clínico de producción.** El login de demo usa una contraseña compartida y debe sustituirse por autenticación individual robusta, autorización, auditoría y almacenamiento privado persistente antes de producción.

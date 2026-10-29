@@ -234,12 +234,20 @@ $("#bookingForm").addEventListener("submit",async e=>{
 });
 $('#confirmationClose').addEventListener('click',()=>$('#confirmationDialog').close());
 $('#confirmationDialog').addEventListener('close',()=>{ $('#bookingForm').reset(); resetPatientLookup(); });
-$("#portalForm").addEventListener("submit",e=>{
+$("#portalForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const r=$("#portalResult");
-  r.hidden=false;
-  r.textContent="El portal está desactivado en esta demo. No se verificaron credenciales ni se accedió a información médica.";
+  const inputs=e.currentTarget.querySelectorAll('input');
+  const dni=inputs[0]?.value.trim()||'';
+  const password=inputs[1]?.value||'';
+  r.hidden=false;r.textContent='Ingresando al portal de demostración…';
+  try{
+    const data=await apiRequest('/api/patient/portal',{method:'POST',body:JSON.stringify({dni,password})});
+    const studies=(data.studies||[]).map(st=>`<article class="result-message" style="margin-top:10px"><strong>${escapeHtml(st.title)}</strong><p>${escapeHtml(st.study_type)} · ${escapeHtml(st.professional||'Profesional')}</p><p>Estado: ${escapeHtml(st.status==='delivered'?'Entregado':'Disponible')}</p>${st.file_url?`<a class="btn btn-small" href="${API_BASE}${st.file_url}" target="_blank" rel="noopener">Ver / descargar archivo</a>`:'<span class="small-muted">Este registro no tiene archivo adjunto.</span>'}</article>`).join('');
+    r.innerHTML=`<strong>Hola, ${escapeHtml(data.patient.first_names)} ${escapeHtml(data.patient.last_names)}.</strong><p>Portal de demostración. No ingreses información real.</p>${studies||'<p>No hay estudios publicados para este paciente.</p>'}<p class="small-muted">La sesión de demostración vence en 30 minutos. Para producción se implementará autenticación reforzada.</p>`;
+  }catch(error){r.textContent=error.message}
 });
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $("#whatsappLink").addEventListener("click",e=>{ e.preventDefault(); openWhatsappChat(); });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));

@@ -1,4 +1,4 @@
-const CACHE = "clinica-demo-v16-sobreturno-patient-id";
+const CACHE = "clinica-demo-v17-estudios-portal-atendido";
 const APP_FILES = [
   "./",
   "./index.html",

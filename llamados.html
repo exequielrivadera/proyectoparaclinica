@@ -8,7 +8,7 @@
 </style></head>
 <body class="display">
 <div class="brand">SINDICATO DE CAMIONEROS · LA RIOJA</div>
-<p class="sub">LLAMADO A CONSULTORIO</p>
+<p class="sub">LLAMADO A CONSULTORIO</p><p class="sub" style="font-size:.8rem">Se anuncia nombre y apellido y el consultorio asignado.</p>
 <h1 id="patientName">Bienvenidos</h1>
 <div class="room" id="room">Por favor, aguarde a ser llamado</div>
 <p id="instruction">Cuando se realice un llamado, aparecerá aquí.</p>
@@ -31,15 +31,15 @@ function speak(text){
 function announce(c){
   $('#patientName').textContent=c.patient_name||'Paciente';
   $('#room').textContent=c.room||'Dirigirse a recepción';
-  $('#instruction').textContent='Por favor, dirigirse al consultorio indicado.';
+  $('#instruction').textContent=(c.appointment_type==='sobreturno'?'Paciente de sobreturno: ':'')+'Por favor, dirigirse a '+(c.room||'recepción')+'.';
   $('#patientName').classList.remove('call-flash');void $('#patientName').offsetWidth;$('#patientName').classList.add('call-flash');
-  if(soundEnabled)speak((c.patient_name||'Paciente')+', dirigirse a '+(c.room||'recepción'));
+  if(soundEnabled)speak('Paciente '+(c.patient_name||'sin nombre')+(c.appointment_type==='sobreturno'?', paciente de sobreturno':'')+'. Dirigirse a '+(c.room||'recepción')+'.');
   else $('#screenStatus').textContent='Llamado recibido. Activá el sonido para escuchar el anuncio.';
 }
 $('#sound').addEventListener('click',()=>{
   soundEnabled=true;$('#sound').textContent='Sonido activado';
   // El clic del usuario habilita el audio. Si ya había un llamado, se anuncia ahora.
-  if(lastCall){speak((lastCall.patient_name||'Paciente')+', dirigirse a '+(lastCall.room||'recepción'))}
+  if(lastCall){speak('Paciente '+(lastCall.patient_name||'sin nombre')+(lastCall.appointment_type==='sobreturno'?', paciente de sobreturno':'')+'. Dirigirse a '+(lastCall.room||'recepción')+'.')}
   else speak('Sonido activado. La pantalla está preparada para los llamados.');
 });
 $('#testVoice').addEventListener('click',()=>{
