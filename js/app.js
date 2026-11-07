@@ -108,6 +108,13 @@ $('#verifyDni').addEventListener('click',verifyPatientDni);
 $('#dni').addEventListener('input',()=>{if(verifiedDni && $('#dni').value.trim()!==verifiedDni){resetPatientLookup();$('#verifyDni').disabled=false;$('#verifyDni').textContent='Verificar DNI';$('#dniMessage').textContent='Cambiaste el DNI. Volvé a verificarlo para continuar.';}});
 $('#dni').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();verifyPatientDni();}});
 $$("[data-open-booking]").forEach(b=>b.addEventListener("click",()=>showBooking()));
+const contactDialog=$("#contactDialog");
+$$('a[href="#contacto"],[data-open-contact]').forEach(el=>el.addEventListener("click",event=>{
+  event.preventDefault();
+  if(contactDialog && !contactDialog.open) contactDialog.showModal();
+  $("#mainNav")?.classList.remove("open");
+  $("#navToggle")?.setAttribute("aria-expanded","false");
+}));
 $$("[data-specialty]").forEach(b=>b.addEventListener("click",()=>showBooking({specialty:b.dataset.specialty})));
 $$("[data-doctor]").forEach(b=>b.addEventListener("click",()=>showBooking({doctor:b.dataset.doctor,specialty:SPECIALTY_BY_DOCTOR[b.dataset.doctor]||""})));
 $("#openPortal").addEventListener("click",()=>portalDialog.showModal());
@@ -411,10 +418,13 @@ window.addEventListener('scroll',updateWhatsappCompact,{passive:true});
 updateWhatsappCompact();
 const whatsappLink=document.getElementById('whatsappLink');
 const whatsappHref='https://wa.me/'+WHATSAPP_NUMBER;
-whatsappLink.href=whatsappHref;
-whatsappLink.target='_blank';
-whatsappLink.rel='noopener noreferrer';
-whatsappLink.querySelector('small').textContent='+54 9 380 450-7584';
-whatsappLink.addEventListener('click',e=>{e.preventDefault();window.open(whatsappHref,'_blank','noopener,noreferrer');});
+if(whatsappLink){
+  whatsappLink.href=whatsappHref;
+  whatsappLink.target='_blank';
+  whatsappLink.rel='noopener noreferrer';
+  const whatsappLabel=whatsappLink.querySelector('small');
+  if(whatsappLabel) whatsappLabel.textContent='+54 9 380 450-7584';
+  whatsappLink.addEventListener('click',e=>{e.preventDefault();window.open(whatsappHref,'_blank','noopener,noreferrer');});
+}
 // Si se entra mediante un enlace con hash de vista interna, abrir la vista correspondiente.
 const initialHash=location.hash.replace('#','');if(viewTemplates[initialHash])openInternalView(initialHash);

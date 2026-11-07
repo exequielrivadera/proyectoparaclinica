@@ -140,3 +140,19 @@ nav a[data-view-link]{cursor:pointer}
 
 /* Mejoras de reserva: identificación por DNI y confirmación clara sin alterar el diseño general. */
 .lookup-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.lookup-row .availability-note{flex:1;min-width:220px}.availability-note.error{color:#b42318}.availability-note.success{color:#147d48}.form-grid input:disabled,.form-grid select:disabled{opacity:.58;cursor:not-allowed}.confirmation-details{line-height:1.55}.confirmation-details p{margin:.55rem 0}.confirmation-details .confirmation-lead{font-size:1.05rem;font-weight:700}.confirmation-details .privacy-note{margin-top:1rem}
+
+
+/* Ventana de contacto de Pulso Digital */
+.contact-modal{width:min(680px,calc(100% - 26px))}
+.contact-modal-intro{margin:0 0 20px;color:var(--muted);font-size:13px}
+.contact-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.contact-option{display:flex;align-items:center;gap:12px;min-width:0;padding:15px;background:#fff;border:1px solid var(--line);border-radius:15px;transition:border-color .18s,background .18s,transform .18s}
+.contact-option:hover{border-color:#a8ccb9;background:#fbfefc;transform:translateY(-2px)}
+.contact-option>span:nth-child(2){min-width:0;flex:1}
+.contact-option strong,.contact-option small{display:block}
+.contact-option strong{font-size:13px;color:var(--ink)}
+.contact-option small{font-size:10px;color:var(--muted);line-height:1.4}
+.contact-option>b{color:var(--green);font-size:15px}
+.contact-option-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:13px;background:var(--mint);color:var(--green);font-size:20px;font-weight:800}
+.contact-open{width:100%;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
+@media(max-width:560px){.contact-modal{padding:22px 18px}.contact-modal-grid{grid-template-columns:1fr}.contact-option{padding:13px}}

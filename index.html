@@ -82,8 +82,8 @@
     </section>
 
     <section class="contact-section" id="contacto">
-      <div><span class="eyebrow">ESTAMOS PARA AYUDARTE</span><h2>¿Tenés alguna consulta?</h2><p>Contactá a secretaría para consultas generales o para recibir ayuda con tu turno.</p></div>
-      <div class="contact-cards"><a class="contact-card" id="whatsappLink" href="#" target="_blank" rel="noopener"><span class="contact-icon">◉</span><span><strong>WhatsApp de secretaría</strong><small>+54 9 380 450-7584</small></span><b>↗</b></a><a class="contact-card" href="mailto:secretaria@example.com"><span class="contact-icon">✉</span><span><strong>Correo electrónico</strong><small>ejemplo@ejemplo.com</small></span><b>↗</b></a><div class="contact-card"><span class="contact-icon">⌖</span><span><strong>Ubicación</strong><small>Dirección de ejemplo, La Rioja</small></span><b>⌖</b></div></div>
+      <div><span class="eyebrow">CONTACTO</span><h2>¿Necesitás comunicarte?</h2><p>Encontrá los canales de contacto y redes sociales de Pulso Digital.</p></div>
+      <div class="contact-cards"><button class="contact-card contact-open" type="button" data-open-contact><span class="contact-icon">↗</span><span><strong>Ver canales de contacto</strong><small>WhatsApp, redes sociales y opiniones</small></span><b>→</b></button></div>
     </section>
   </main>
 
@@ -150,6 +150,32 @@
       <div id="bookingResult" class="result-message" role="status" hidden></div>
     </form>
   </dialog>
+  <dialog id="contactDialog" class="modal contact-modal">
+    <div class="modal-heading">
+      <div><span class="eyebrow">CANALES OFICIALES</span><h2>Contacto · Pulso Digital</h2></div>
+      <button type="button" class="close-modal" data-close="contactDialog" aria-label="Cerrar">×</button>
+    </div>
+    <p class="contact-modal-intro">Elegí el canal que prefieras para comunicarte, conocer nuestro trabajo o compartir tu opinión.</p>
+    <div class="contact-modal-grid">
+      <a class="contact-option" href="https://wa.me/5493804507584" target="_blank" rel="noopener noreferrer">
+        <span class="contact-option-icon">◉</span><span><strong>WhatsApp</strong><small>Escribinos directamente</small></span><b>↗</b>
+      </a>
+      <a class="contact-option" href="https://www.instagram.com/pulsodigital.lr/" target="_blank" rel="noopener noreferrer">
+        <span class="contact-option-icon">◎</span><span><strong>Instagram</strong><small>@pulsodigital.lr</small></span><b>↗</b>
+      </a>
+      <a class="contact-option" href="https://www.linkedin.com/in/claudio-exequiel-rivadera-308611377/" target="_blank" rel="noopener noreferrer">
+        <span class="contact-option-icon">in</span><span><strong>LinkedIn</strong><small>Perfil profesional</small></span><b>↗</b>
+      </a>
+      <a class="contact-option" href="https://www.google.com/maps/place/Pulso+Digital+LR+-+Servicio+T%C3%A9cnico+de+PC+e+Impresoras/@-29.4199925,-66.8472006,17z/data=!3m1!4b1!4m6!3m5!1s0x9427db9c2dbc7329:0x44eb988b37d756ab!8m2!3d-29.4199925!4d-66.8472006!16s%2Fg%2F11n3m7cgb_?entry=ttu&g_ep=EgoyMDI2MTEwMy4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">
+        <span class="contact-option-icon">★</span><span><strong>Opiniones en Google</strong><small>Leé reseñas y compartí tu experiencia</small></span><b>↗</b>
+      </a>
+      <a class="contact-option" href="https://www.facebook.com/profile.php?id=61583352606803" target="_blank" rel="noopener noreferrer">
+        <span class="contact-option-icon">f</span><span><strong>Facebook</strong><small>Pulso Digital</small></span><b>↗</b>
+      </a>
+    </div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" data-close="contactDialog">Cerrar</button></div>
+  </dialog>
+
   <dialog id="confirmationDialog" class="modal">
     <div class="modal-heading"><div><span class="eyebrow">RESERVA ONLINE</span><h2>¡Turno reservado!</h2></div><button type="button" class="close-modal" data-close="confirmationDialog" aria-label="Cerrar">×</button></div>
     <div id="confirmationDetails" class="confirmation-details"></div>
