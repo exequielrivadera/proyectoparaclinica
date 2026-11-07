@@ -1,4 +1,4 @@
-const CACHE = "clinica-contacto-pulso-v19";
+const CACHE = "clinica-contacto-pulso-v20";
 const APP_FILES = [
   "./",
   "./index.html",

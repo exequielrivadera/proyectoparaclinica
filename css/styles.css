@@ -156,3 +156,8 @@ nav a[data-view-link]{cursor:pointer}
 .contact-option-icon{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border-radius:13px;background:var(--mint);color:var(--green);font-size:20px;font-weight:800}
 .contact-open{width:100%;text-align:left;color:var(--ink);font:inherit;cursor:pointer}
 @media(max-width:560px){.contact-modal{padding:22px 18px}.contact-modal-grid{grid-template-columns:1fr}.contact-option{padding:13px}}
+
+.contact-option-icon svg{display:block;width:25px;height:25px}
+.contact-option-icon.brand-whatsapp{color:#25D366;background:#e9f8ef}
+.contact-option-icon.brand-instagram{background:#fff}
+.contact-option-icon.brand-google{background:#fff}
