@@ -5,3 +5,13 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function dt(v){try{const d=new Date(v);return d.toLocaleDateString('es-AR')+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}catch{return v||''}}
 function msg(t,err=false){const el=$('#message');if(el){el.textContent=t;el.className='msg'+(err?' error':'');el.classList.remove('hidden')}}
 function statusLabel(s){return ({booked:'Reservado',arrived:'Llegó',called:'Llamado',in_consultation:'En atención',attended:'Atendido',cancelled:'Cancelado',rescheduled:'Reprogramado',processing:'En proceso',available:'Disponible',delivered:'Entregado'})[s]||s}
+
+
+// Navegación de regreso: vuelve a la página interna anterior o usa el enlace alternativo.
+document.addEventListener('click',function(event){
+  const link=event.target.closest('[data-back]');
+  if(!link)return;
+  let sameSite=false;
+  try{sameSite=!!document.referrer && new URL(document.referrer).origin===location.origin;}catch{}
+  if(sameSite && history.length>1){event.preventDefault();history.back();}
+});
