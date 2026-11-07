@@ -24,8 +24,10 @@ DB_PATH = Path(os.getenv("DATABASE_PATH", str(ROOT / "instance" / "clinica.sqlit
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 PRIVATE_STUDIES_DIR = ROOT / "private_studies"
 PRIVATE_STUDIES_DIR.mkdir(parents=True, exist_ok=True)
-app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
+
+# Crear la aplicación antes de configurar sus opciones.
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
 app.config["JSON_AS_ASCII"] = False
 
 # Servir frontend y API desde el mismo proceso evita el error "Failed to fetch"
