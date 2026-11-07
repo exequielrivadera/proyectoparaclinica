@@ -1,4 +1,4 @@
-const CACHE = "clinica-navegacion-volver-v18";
+const CACHE = "clinica-nav-uniforme-v18";
 const APP_FILES = [
   "./",
   "./index.html",
