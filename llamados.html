@@ -2,44 +2,80 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Llamado de pacientes | Clínica</title><link rel="stylesheet" href="css/panels.css">
+<title>Llamado de pacientes | Centro Médico</title>
+<link rel="stylesheet" href="css/panels.css">
 <style>
-.display #patientName{min-height:1.25em}.display .room{min-height:1.4em}.screen-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:22px auto}.screen-actions button{font-size:1rem}.screen-status{font-size:.82rem;opacity:.75;margin-top:12px}.call-flash{animation:callFlash .7s ease-in-out 2}@keyframes callFlash{50%{transform:scale(1.025);opacity:.75}}
-</style></head>
+.display{display:block;min-height:100vh;padding:clamp(18px,3vw,42px);text-align:center;background:#10241f;color:#fff}
+.call-board{width:min(1100px,100%);margin:0 auto}
+.display .brand{letter-spacing:.12em;color:#a8dfc4;font-size:.85rem}
+.display .screen-kicker{color:#a8dfc4;letter-spacing:.14em;font-size:.78rem;font-weight:800;margin:14px 0 8px}
+.display .current-call{margin:18px auto 26px;padding:clamp(22px,4vw,42px);background:#19372e;border:1px solid rgba(168,223,196,.2);border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.display #patientName{font-size:clamp(2rem,6vw,4.8rem);line-height:1.08;letter-spacing:-.045em;margin:8px 0 20px;min-height:1.1em}
+.display .room{display:inline-flex;align-items:center;justify-content:center;min-height:0;margin:0;padding:13px 22px;border-radius:14px;background:#e7f3ec;color:#17382d;font-size:clamp(1.15rem,2.5vw,2rem);font-weight:850;box-shadow:none}
+.display #instruction{color:#c7d7cf;margin:16px 0 0;font-size:clamp(.9rem,1.5vw,1.05rem)}
+.display .screen-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px auto}
+.display .screen-actions button{font-size:.9rem;margin:0}
+.display .screen-status{font-size:.82rem;opacity:.75;margin:12px 0 26px}
+.display .history{width:min(900px,100%);margin:0 auto 30px;text-align:left}
+.display .history h2{font-size:clamp(1.1rem,2vw,1.45rem);color:#eaf4ee;margin:0 0 12px;padding-bottom:12px;border-bottom:1px solid rgba(199,215,207,.22)}
+.display .history-list{display:flex;flex-direction:column;gap:0;border:1px solid rgba(199,215,207,.17);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.035)}
+.display .history-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;border-bottom:1px solid rgba(199,215,207,.14);font-size:clamp(.95rem,1.7vw,1.15rem)}
+.display .history-row:last-child{border-bottom:0}
+.display .history-name{font-weight:750;color:#fff;text-align:left;overflow-wrap:anywhere}
+.display .history-room{font-weight:800;color:#a8dfc4;text-align:right;white-space:nowrap}
+.display .history-empty{padding:22px;color:#c7d7cf;text-align:center}
+.display .call-flash{animation:callFlash .7s ease-in-out 2}
+@keyframes callFlash{50%{transform:scale(1.015);opacity:.78}}
+@media(max-width:560px){.display{padding:18px 12px}.display .history-row{padding:14px 13px;gap:10px}.display .room{width:100%}.display .current-call{border-radius:18px}}
+</style>
+</head>
 <body class="display">
-<div class="brand">SINDICATO DE CAMIONEROS · LA RIOJA</div>
-<p class="sub">LLAMADO A CONSULTORIO</p><p class="sub" style="font-size:.8rem">Se anuncia nombre y apellido y el consultorio asignado.</p>
-<h1 id="patientName">Bienvenidos</h1>
-<div class="room" id="room">Por favor, aguarde a ser llamado</div>
-<p id="instruction">Cuando se realice un llamado, aparecerá aquí.</p>
-<div class="screen-actions"><button class="btn" id="sound">Activar sonido de la pantalla</button><button class="btn secondary" id="testVoice">Probar voz</button></div>
-<p id="screenStatus" class="screen-status" aria-live="polite">Conectando con el sistema…</p>
-<div class="previous" id="previous"></div>
-<p class="sub" style="font-size:.8rem;margin-top:35px">Pantalla de llamados de pacientesstración</p>
+<main class="call-board">
+  <div class="brand">CENTRO MÉDICO · SINDICATO DE CAMIONEROS · LA RIOJA</div>
+  <section class="current-call" aria-live="polite">
+    <p class="screen-kicker">ÚLTIMO LLAMADO</p>
+    <h1 id="patientName">Bienvenidos</h1>
+    <div class="room" id="room">Aguarde a ser llamado</div>
+    <p id="instruction">Cuando se realice un llamado, aparecerá aquí.</p>
+  </section>
+  <div class="screen-actions">
+    <button class="btn" id="sound" type="button">Activar sonido de la pantalla</button>
+    <button class="btn secondary" id="testVoice" type="button">Probar voz</button>
+  </div>
+  <p id="screenStatus" class="screen-status" aria-live="polite">Conectando con el sistema…</p>
+  <section class="history" aria-label="Historial de llamados">
+    <h2>Historial de llamados</h2>
+    <div class="history-list" id="previous"><div class="history-empty">Todavía no hay pacientes llamados en esta jornada.</div></div>
+  </section>
+</main>
 <script src="js/config.js"></script><script src="js/panels.js"></script>
 <script>
 let soundEnabled=false,lastId=null,lastCall=null,refreshBusy=false;
 function speak(text){
   if(!soundEnabled){$('#screenStatus').textContent='Activá el sonido para escuchar los llamados.';return false}
-  if(!('speechSynthesis' in window)){ $('#screenStatus').textContent='Este navegador no admite voz. Probá con Chrome o Edge actualizado.';return false }
+  if(!('speechSynthesis' in window)){$('#screenStatus').textContent='Este navegador no admite voz. Probá con Chrome o Edge actualizado.';return false}
   try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='es-AR';u.rate=.92;u.pitch=1;u.volume=1;
     const voices=window.speechSynthesis.getVoices();const spanish=voices.find(v=>/^es(-|_)/i.test(v.lang));if(spanish)u.voice=spanish;
-    u.onerror=(e)=>{$('#screenStatus').textContent='No se pudo reproducir la voz. Verificá el volumen y la salida de audio.'};
+    u.onerror=()=>{$('#screenStatus').textContent='No se pudo reproducir la voz. Verificá el volumen y la salida de audio.'};
     u.onend=()=>{$('#screenStatus').textContent='Pantalla conectada.'};window.speechSynthesis.speak(u);return true;
   }catch(e){$('#screenStatus').textContent='Error al reproducir la voz: '+e.message;return false}
 }
 function announce(c){
-  $('#patientName').textContent=c.patient_name||'Paciente';
-  $('#room').textContent=c.room||'Dirigirse a recepción';
-  $('#instruction').textContent=(c.appointment_type==='sobreturno'?'Paciente de sobreturno: ':'')+'Por favor, dirigirse a '+(c.room||'recepción')+'.';
+  const patient=c.patient_name||'Paciente';const room=c.room||'recepción';
+  $('#patientName').textContent=patient;$('#room').textContent=room;
+  $('#instruction').textContent='Por favor, '+patient+', dirigirse a '+room+'.';
   $('#patientName').classList.remove('call-flash');void $('#patientName').offsetWidth;$('#patientName').classList.add('call-flash');
-  if(soundEnabled)speak('Paciente '+(c.patient_name||'sin nombre')+(c.appointment_type==='sobreturno'?', paciente de sobreturno':'')+'. Dirigirse a '+(c.room||'recepción')+'.');
+  if(soundEnabled)speak('Paciente '+patient+'. Dirigirse a '+room+'.');
   else $('#screenStatus').textContent='Llamado recibido. Activá el sonido para escuchar el anuncio.';
+}
+function renderHistory(calls){
+  const host=$('#previous');
+  if(!calls.length){host.innerHTML='<div class="history-empty">Todavía no hay pacientes llamados en esta jornada.</div>';return}
+  host.innerHTML=calls.map(c=>`<div class="history-row"><span class="history-name">${esc(c.patient_name||'Paciente')}</span><span class="history-room">${esc(c.room||'Recepción')}</span></div>`).join('');
 }
 $('#sound').addEventListener('click',()=>{
   soundEnabled=true;$('#sound').textContent='Sonido activado';
-  // El clic del usuario habilita el audio. Si ya había un llamado, se anuncia ahora.
-  if(lastCall){speak('Paciente '+(lastCall.patient_name||'sin nombre')+(lastCall.appointment_type==='sobreturno'?', paciente de sobreturno':'')+'. Dirigirse a '+(lastCall.room||'recepción')+'.')}
+  if(lastCall)speak('Paciente '+(lastCall.patient_name||'sin nombre')+'. Dirigirse a '+(lastCall.room||'recepción')+'.');
   else speak('Sonido activado. La pantalla está preparada para los llamados.');
 });
 $('#testVoice').addEventListener('click',()=>{
@@ -47,16 +83,15 @@ $('#testVoice').addEventListener('click',()=>{
   speak('Comprobación de audio. Dirigirse al consultorio número tres.');
 });
 async function refresh(){
- if(refreshBusy)return;refreshBusy=true;
- try{
-  const r=await api('/api/display/calls');
-  const calls=Array.isArray(r.calls)?r.calls:[];
-  $('#screenStatus').textContent='Pantalla conectada.';
-  if(calls.length){const c=calls[0];lastCall=c;
-    if(String(c.id)!==String(lastId)){lastId=c.id;announce(c)}
-  }
- }catch(e){$('#screenStatus').textContent='No se pudo actualizar la pantalla. Verificá la conexión con el servidor.';}
- finally{refreshBusy=false}
+  if(refreshBusy)return;refreshBusy=true;
+  try{
+    const r=await api('/api/display/calls');const calls=Array.isArray(r.calls)?r.calls:[];
+    $('#screenStatus').textContent='Pantalla conectada.';renderHistory(calls);
+    if(calls.length){const c=calls[0];lastCall=c;if(String(c.id)!==String(lastId)){lastId=c.id;announce(c)}}
+    else if(lastId===null){$('#patientName').textContent='Bienvenidos';$('#room').textContent='Aguarde a ser llamado';$('#instruction').textContent='Cuando se realice un llamado, aparecerá aquí.'}
+  }catch(e){$('#screenStatus').textContent='No se pudo actualizar la pantalla. Verificá la conexión con el servidor.';}
+  finally{refreshBusy=false}
 }
 refresh();setInterval(refresh,1500);
-</script></body></html>
+</script>
+</body></html>

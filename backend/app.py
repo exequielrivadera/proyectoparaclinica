@@ -623,9 +623,18 @@ def doctor_status_set():
             con.execute("UPDATE appointments SET status='in_consultation' WHERE doctor=? AND status='called'",(doctor,))
         con.execute("INSERT INTO doctor_status(doctor,room,is_free,updated_at) VALUES(?,?,?,?) ON CONFLICT(doctor) DO UPDATE SET room=excluded.room,is_free=excluded.is_free,updated_at=excluded.updated_at",(doctor,room,is_free,now))
         if is_free:
-            # Al liberar el consultorio, el backend llama automáticamente al siguiente paciente ya registrado como llegado.
+            # La cola se determina por el estado "arrived": recepción ya confirmó
+            # que el paciente está físicamente en la clínica. Priorizamos los turnos
+            # de hoy, pero no descartamos ingresos válidos por diferencias de fecha
+            # (por ejemplo, turnos reprogramados o fechas guardadas con otro huso).
             day=now_local().date().isoformat()
-            row=con.execute("SELECT * FROM appointments WHERE doctor=? AND status='arrived' AND substr(starts_at,1,10)=? ORDER BY starts_at ASC,id ASC LIMIT 1",(doctor,day)).fetchone()
+            row=con.execute(
+                "SELECT * FROM appointments "
+                "WHERE doctor=? AND status='arrived' "
+                "ORDER BY CASE WHEN substr(starts_at,1,10)=? THEN 0 ELSE 1 END, "
+                "starts_at ASC,id ASC LIMIT 1",
+                (doctor,day)
+            ).fetchone()
             if row:
                 patient_name=(row["first_names"]+" "+row["last_names"]).strip()
                 con.execute("INSERT INTO call_events(appointment_id,patient_name,room,called_at,status) VALUES(?,?,?,?,'called')",(row["id"],patient_name,room,now))
@@ -635,7 +644,7 @@ def doctor_status_set():
     if called:
         return jsonify(ok=True,doctor=doctor,room=room,is_free=False,called=called,message=f"Llamado automático: {called['patient_name']} — {room}. El consultorio pasó a ocupado.")
     if is_free:
-        return jsonify(ok=True,doctor=doctor,room=room,is_free=True,message="Consultorio libre. No hay pacientes marcados como llegados para llamar.")
+        return jsonify(ok=True,doctor=doctor,room=room,is_free=True,message="Consultorio libre. No hay pacientes marcados como llegados en la lista de espera.")
     return jsonify(ok=True,doctor=doctor,room=room,is_free=False,message="Consultorio ocupado. No se llamará a otro paciente hasta liberarlo.")
 
 @app.get("/api/admin/doctor-status")
@@ -673,17 +682,24 @@ def admin_call_next(doctor):
             return jsonify(error="El profesional todavía no marcó su consultorio como libre."),409
         if not room: room=status["room"] or "Consultorio 1"
         # Cada paciente debe ser anunciado al menos dos veces antes de habilitar el siguiente llamado.
+        # El último llamado del profesional se consulta sin filtrar la fecha del turno,
+        # porque también puede haberse llamado un paciente llegado con turno de otro día.
         last=con.execute("""SELECT c.appointment_id,a.status FROM call_events c
             JOIN appointments a ON a.id=c.appointment_id
-            WHERE a.doctor=? AND substr(a.starts_at,1,10)=? ORDER BY c.id DESC LIMIT 1""",(doctor,day)).fetchone()
+            WHERE a.doctor=? ORDER BY c.id DESC LIMIT 1""",(doctor,)).fetchone()
         if last and last["status"] == "called":
             count=con.execute("SELECT COUNT(*) AS n FROM call_events WHERE appointment_id=?",(last["appointment_id"],)).fetchone()["n"]
             if count < 2:
                 return jsonify(error="Antes de llamar al siguiente paciente, repetí el llamado actual al menos una segunda vez."),409
-        # Solo llamar pacientes que recepción ya marcó como llegados; evitar llamar a alguien que aún no está.
-        row=con.execute("SELECT * FROM appointments WHERE doctor=? AND status='arrived' AND substr(starts_at,1,10)=? ORDER BY starts_at ASC,id ASC LIMIT 1",(doctor,day)).fetchone()
+        # Solo llamar pacientes que recepción marcó expresamente como llegados.
+        # Prioridad: turnos de la fecha solicitada; si no hay, cualquier otro
+        # turno marcado como llegado (por ejemplo, sobreturnos o reprogramaciones).
+        row=con.execute("""SELECT * FROM appointments
+            WHERE doctor=? AND status='arrived'
+            ORDER BY CASE WHEN substr(starts_at,1,10)=? THEN 0 ELSE 1 END,
+                     starts_at ASC,id ASC LIMIT 1""",(doctor,day)).fetchone()
         if not row:
-            return jsonify(error="No hay pacientes marcados como llegados para este profesional hoy."),404
+            return jsonify(error="No hay pacientes marcados como llegados para este profesional."),404
         name=(row["first_names"]+" "+row["last_names"]).strip()
         con.execute("INSERT INTO call_events(appointment_id,patient_name,room,called_at,status) VALUES(?,?,?,?,?)",(row["id"],name,room,now_local().isoformat(),"called"))
         con.execute("UPDATE appointments SET status='called' WHERE id=?",(row["id"],))
@@ -700,7 +716,7 @@ def admin_repeat_call(doctor):
     with connect() as con:
         row=con.execute("""SELECT c.appointment_id,c.patient_name,c.room,a.status
             FROM call_events c JOIN appointments a ON a.id=c.appointment_id
-            WHERE a.doctor=? AND substr(a.starts_at,1,10)=? ORDER BY c.id DESC LIMIT 1""",(doctor,day)).fetchone()
+            WHERE a.doctor=? ORDER BY c.id DESC LIMIT 1""",(doctor,)).fetchone()
         if not row or row["status"] != "called":
             return jsonify(error="No hay un paciente con llamado activo para repetir."),404
         count=con.execute("SELECT COUNT(*) AS n FROM call_events WHERE appointment_id=?",(row["appointment_id"],)).fetchone()["n"]
@@ -816,8 +832,19 @@ def patient_studies():
 
 @app.get("/api/display/calls")
 def display_calls():
-    with connect() as con: rows=con.execute("SELECT c.*,a.appointment_type,a.doctor,a.specialty FROM call_events c JOIN appointments a ON a.id=c.appointment_id ORDER BY c.id DESC LIMIT 5").fetchall()
-    return jsonify(calls=[dict(r) for r in rows],PRUEBA=prueba_MODE)
+    # Historial de llamados de la jornada actual. Cada intento se conserva como
+    # un evento independiente, incluso cuando se repite el llamado a un paciente.
+    day = now_local().date().isoformat()
+    with connect() as con:
+        rows = con.execute("""            SELECT c.id, c.appointment_id, c.patient_name, c.room, c.called_at,
+                   c.status, a.appointment_type, a.doctor, a.specialty
+            FROM call_events c
+            JOIN appointments a ON a.id = c.appointment_id
+            WHERE substr(c.called_at, 1, 10) = ?
+            ORDER BY c.id DESC
+            LIMIT 1000
+        """, (day,)).fetchall()
+    return jsonify(calls=[dict(r) for r in rows], PRUEBA=prueba_MODE)
 
 @app.post("/api/admin/appointments/<int:aid>/call")
 def call_patient(aid):

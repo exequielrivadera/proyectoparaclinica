@@ -253,7 +253,7 @@ $("#portalForm").addEventListener("submit",async e=>{
   }catch(error){r.textContent=error.message}
 });
 function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-$("#whatsappLink").addEventListener("click",e=>{ e.preventDefault(); openWhatsappChat(); });
+// Se quitó el listener duplicado: el enlace de WhatsApp ya se configura de forma segura al final del archivo.
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
 }
@@ -413,7 +413,7 @@ chatInputForm.addEventListener('submit',event=>{
   setBotPrompt('Elegí una opción:'); chatOptions.hidden=false;
 });
 // Al desplazarse, el widget se compacta; el texto desaparece en degradado. Hover/foco recupera tamaño.
-function updateWhatsappCompact(){document.getElementById('whatsappWidget').classList.toggle('is-compact',window.scrollY>35);}
+function updateWhatsappCompact(){const widget=document.getElementById('whatsappWidget');if(widget)widget.classList.toggle('is-compact',window.scrollY>35);}
 window.addEventListener('scroll',updateWhatsappCompact,{passive:true});
 updateWhatsappCompact();
 const whatsappLink=document.getElementById('whatsappLink');
